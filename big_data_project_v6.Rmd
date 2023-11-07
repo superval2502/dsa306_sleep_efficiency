@@ -1,0 +1,642 @@
+---
+title: "Big Data Project"
+author: "Ryne"
+date: "2023-11-03"
+output: html_document
+---
+
+#Loading Libraries
+```{r}
+library(arrow);library(sparklyr);library(dplyr);library(ggplot2);library(dbplot);library(corrr);library(lubridate);library(plotly);library(doParallel);library(plumber)
+```
+
+
+#Connection with Spark
+```{r}
+sc <- spark_connect(master = "local", version = "3.4.0")
+sleep_csv <- spark_read_csv(sc,
+                        name = "Sleep",
+                        path = "Sleep_Efficiency.csv")
+
+parquet_path <- "Sleep_parquet"
+spark_write_parquet(sleep_csv, path = parquet_path, mode = "overwrite")
+sleep <- spark_read_parquet(sc, path = parquet_path, overwrite = TRUE)
+```
+
+
+#EDA
+
+##cleaning step
+```{r}
+#looking at our data
+head(sleep)
+
+#using glimpse we find out some data that we want to clean
+glimpse(sleep)
+
+#this step cleans by
+#1. dropping na rows
+#2. dropping the ID row
+#3. changing smoking status and gender as binary variables
+#4. setting bedtime and wakeup_time as hour in int format
+#named as sleep_clean
+sleep_clean <- sleep |>
+               filter_all(all_vars(!is.na(.)))|>
+               select(-ID) |>
+               mutate(Smoking_status = as.integer(ifelse(Smoking_status == "Yes", 1, 0)),
+                      Awakenings = as.integer(Awakenings),
+                      Gender = as.integer(ifelse(Gender == "Female", 1, 0)),
+                      Bedtime = (hour(Bedtime)),
+                      Wakeup_time = (hour(Wakeup_time)))
+
+glimpse(sleep_clean)
+head(sleep_clean)
+```
+
+
+##Data Exploration
+
+###Summary Statistics
+```{r}
+#checking for abnomalies summary statistics
+sleep_clean|>
+  sdf_describe()
+```
+
+
+###Frequency distribution of variables
+```{r}
+# Frequency distribution of numerical variables
+sleep_clean_df <- sleep_clean |>
+                  collect()
+
+for (col in names(sleep_clean_df)){
+  graphs <- ggplot(sleep_clean_df, aes_string(x = col)) +
+    geom_histogram(binwidth = 0.15, fill = "skyblue", color = "black")+
+    labs(title = paste("Histogram of", col), x = col, y = "Frequency")
+
+  print(graphs)
+}
+```
+
+
+###Correlations of variables
+```{r}
+# #getting correlation of all variables
+# sleep_corr <- sleep_clean |>
+#                 correlate(use = "pairwise.complete.obs", method = "pearson") |>
+#                 shave(upper = TRUE)
+# 
+# sleep_corr
+# 
+# corr_plot <- rplot(sleep_corr, print_cor = TRUE) +
+#                 scale_x_discrete(guide = guide_axis(angle = 45))
+# 
+# corr_plot
+```
+
+###relationship between target and some interesting predictors
+
+```{r}
+#investigating relationship between target and individual predictors
+
+#for smoke against sleep efficiency
+smoke_prop_data <- sleep_clean |>
+                   group_by(Smoking_status) |>
+                   summarise(
+                      avg_sleep_efficiency = mean(Sleep_efficiency, na.rm = TRUE),
+                      sd_sleep_efficiency = sd(Sleep_efficiency, na.rm = TRUE),
+                      n = n()) |>
+                   mutate(se = sd_sleep_efficiency/sqrt(n)) |>
+                    collect()
+smoke_prop_data
+```
+
+```{r}
+#prepping for plot
+average_sleep_eff_df <- sleep_clean |>
+                        summarise(avg_sleep_efficiency = mean(Sleep_efficiency))|>
+                        collect()
+
+average_sleep_eff_vec <- average_sleep_eff_df$avg_sleep_efficiency
+
+#plotting relationship between smoking status and sleep efficiency
+smoke_prop_data |>
+  mutate(Smoking_status = as.factor(Smoking_status))|>
+  ggplot(aes(x = Smoking_status, y = avg_sleep_efficiency))+
+  geom_point(size = 2)+
+  geom_errorbar(aes(ymin = avg_sleep_efficiency - 1.96*se,
+                    ymax = avg_sleep_efficiency + 1.96*se),
+                    width = 0.1) +
+  geom_hline(yintercept = average_sleep_eff_vec, linetype = "dashed")+
+  labs(title = "Average sleep efficiency based on smoking status")+
+  ylab("Average sleep efficiency")+
+  xlab("Smoking status")
+```
+
+```{r}
+#investigating relationship between alcohol consumption and sleep efficiency
+alcohol_prop_data <- sleep_clean %>%
+  group_by(Alcohol_consumption) %>%
+  summarise(
+    avg_sleep_efficiency = mean(Sleep_efficiency, na.rm = TRUE),
+    sd_sleep_efficiency = sd(Sleep_efficiency, na.rm = TRUE),
+    n = n()
+  ) %>%
+  mutate(se = sd_sleep_efficiency/sqrt(n)) %>%
+  arrange(Alcohol_consumption) %>%
+  collect()
+
+alcohol_prop_data
+
+#plot of alcohol consumption against sleep efficiency
+alc_con <- sleep_clean %>%
+  ggplot(aes(x = Alcohol_consumption, y = Sleep_efficiency)) +
+  geom_point(aes(Alcohol_consumption)) +
+  labs(title = "Sleep Efficiency vs. Alcohol Consumption",
+       x = "Alcohol Consumption (oz)",
+       y = "Sleep Efficiency (%)") +
+  theme_minimal()
+
+alc_con
+```
+
+```{r}
+#investigating relationship between caffeine consumption and sleep efficiency
+caffeine_prop_data <- sleep_clean %>%
+  group_by(Caffeine_consumption) %>%
+  summarise(
+    avg_sleep_efficiency = mean(Sleep_efficiency, na.rm = TRUE),
+    sd_sleep_efficiency = sd(Sleep_efficiency, na.rm = TRUE),
+    n = n()
+  ) %>%
+  mutate(se = sd_sleep_efficiency/sqrt(n)) %>%
+  arrange(Caffeine_consumption) %>%
+  collect()
+
+caffeine_prop_data
+
+#plot of caffeine consumption against sleep efficiency
+caff_con <- sleep_clean %>%
+  ggplot(aes(x = Caffeine_consumption, y = Sleep_efficiency)) +
+  geom_point(aes(Caffeine_consumption)) +
+  labs(title = "Sleep Efficiency vs. Caffeine Consumption",
+       x = "Caffeine Consumption (times)",
+       y = "Sleep Efficiency (%)") +
+  theme_minimal()
+
+caff_con
+```
+
+```{r}
+#relationship of gender against sleep efficiency
+gender_prop_data <- sleep_clean |>
+                    group_by(Gender) |>
+                    summarise(avg_sleep_efficiency = mean(Sleep_efficiency),
+                              sd_sleep_efficiency = sd(Sleep_efficiency),
+                              n = n())|>
+                    mutate(se = sd_sleep_efficiency/sqrt(n)) |>
+                    collect()
+gender_prop_data
+```
+
+```{r}
+#plot of gender against sleep efficiency
+gender_prop_data |>
+  mutate(Gender = as.factor(Gender)) |>
+  ggplot(aes(x = Gender, y = avg_sleep_efficiency))+
+  geom_point(size = 2)+
+  geom_errorbar(aes(ymin = avg_sleep_efficiency - 1.96*se,
+                    ymax = avg_sleep_efficiency + 1.96*se),
+                    width = 0.1) +
+  geom_hline(yintercept = average_sleep_eff_vec, linetype = "dashed")+
+  labs(title = "Average sleep efficiency based on gender")+
+  ylab("Average sleep efficiency")+
+  xlab("Gender")
+```
+
+```{r}
+#for exercise frequency against sleep efficiency
+exercise_prop_data <- sleep_clean |>
+                    group_by(Exercise_frequency) |>
+                    summarise(avg_sleep_efficiency = mean(Sleep_efficiency),
+                              sd_sleep_efficiency = sd(Sleep_efficiency),
+                              n = n())|>
+                    mutate(se = sd_sleep_efficiency/sqrt(n)) |>
+                    arrange(Exercise_frequency) |>
+                    collect()
+exercise_prop_data
+```
+
+##Visualisation
+```{r}
+#visualising light sleep percentage against sleep_efficiency using raster
+sleep_clean |>
+  dbplot_raster(x = Light_sleep_percentage, y = Sleep_efficiency, fill = n(), resolution = 10)
+
+#raster plot for deep sleep percentage against sleep efficiency using raster
+sleep_clean |>
+  dbplot_raster(x = Deep_sleep_percentage, y = Sleep_efficiency, fill = n(), resolution = 10)
+
+#raster plot for REM sleep against sleep efficiency using rastor plot
+sleep_clean |>
+  dbplot_raster(x = REM_sleep_percentage, y = Sleep_efficiency, fill = n(), resolution = 10)
+
+#raster plot for Sleep Duration against sleep efficiency using rastor plot
+sleep_clean |>
+  dbplot_raster(x = Sleep_duration, y = Sleep_efficiency, fill = n(), resolution = 10)
+```
+
+```{r}
+grouped_sleep8 <- sleep_clean |>
+                  group_by(Bedtime)|>
+                  summarise(n = n(), ave_sleep = mean(Sleep_efficiency))|>
+                  arrange(desc(ave_sleep))|>
+                  collect()
+bedtime_plot <- grouped_sleep8 |>
+                mutate(Bedtime = as.factor(Bedtime)) |>
+                ggplot(aes(x=Bedtime, y=ave_sleep))+
+                geom_point(aes(size = n))+
+                labs(title = "The effects of Bedtime on Sleep efficiency")+
+                ylab("Average sleep efficiency")+
+                xlab("Bedtime in 24 Hours")+
+                theme_minimal()
+ggplotly(bedtime_plot)
+```
+
+```{r}
+# visualising the frequency of sleep duration using histogram
+sleep_clean |>
+  dbplot_histogram(Sleep_duration, binwidth = 1) +
+  labs(title = "Sleep Duration Distribution",
+       subtitle = "Histogram of Sleep Duration") +
+  xlab("Sleep Duration")
+```
+
+```{r}
+sleep_clean |>
+  dbplot_raster(x = Sleep_duration, y = Sleep_efficiency, fill = n(), resolution = 10)
+```
+
+```{r}
+# boxplot of Deep sleep percentage with respect to Smoking status
+sleep_clean |>
+  ggplot(aes(x = as.factor(Smoking_status), y = Deep_sleep_percentage)) +
+  geom_boxplot() +
+  xlab("Smoking Status") +
+  ylab("Deep Sleep Percentage")
+
+# boxplot of Deep sleep percentage with respect to Gender
+sleep_clean |>
+  ggplot(aes(x = as.factor(Gender), y = Deep_sleep_percentage)) +
+  geom_boxplot() +
+  xlab("Gender") +
+  ylab("Deep Sleep Percentage")
+```
+
+```{r}
+#average sleep efficiency by age
+grouped_sleep <- sleep_clean |>
+                group_by(Age) |>
+                summarise(avg_sleep_efficiency = mean(Sleep_efficiency))|>
+                collect()
+grouped_sleep |>
+  ggplot(aes(x = Age, y = avg_sleep_efficiency)) +
+  geom_line()+
+  labs(title = "Average sleep efficiency by age")+
+  ylab("Average sleep efficiency")+
+  xlab("Age")+
+  coord_cartesian(ylim = c(0.4, 1))
+```
+
+```{r}
+# boxplot of Sleep efficiency with respect to Alcohol consumption
+sleep_clean |>
+  ggplot(aes(x = as.factor(Alcohol_consumption), y = Sleep_efficiency)) +
+  geom_boxplot() +
+  xlab("Alcohol consumption") +
+  ylab("Sleep efficiency")
+
+# boxplot of Sleep efficiency with respect to REM sleep percentage
+# rational: Alcohol consumption harms REM sleep, which is important for memory and learning
+sleep_clean |>
+  ggplot(aes(x = as.factor(REM_sleep_percentage), y = Sleep_efficiency)) +
+  geom_boxplot() +
+  xlab("REM sleep percentage") +
+  ylab("Sleep efficiency")
+
+# boxplot of Sleep efficiency with respect to Caffeine consumption
+sleep_clean |>
+  ggplot(aes(x = as.factor(Caffeine_consumption), y = Sleep_efficiency)) +
+  geom_boxplot() +
+  xlab("Caffeine consumption") +
+  ylab("Sleep efficiency")
+```
+
+```{r}
+# boxplot of Deep sleep percentage against Awakenings
+# rational: To see if the number of awakenings has an effect on deep sleep
+# the higher the frequency of awakenings, sleep quality decreases
+sleep_clean |>
+  ggplot(aes(x = as.factor(Awakenings), y = Deep_sleep_percentage)) +
+  geom_boxplot() +
+  xlab("Awakenings") +
+  ylab("Deep sleep percentage")
+```
+
+```{r}
+# Alcohol consumption and smoking status
+grouped_sleep10 <- sleep_clean |>
+                   mutate(Alcohol_status = ifelse(Alcohol_consumption %in% c(1,2,3,4,5),1,0))|>
+                   group_by(Alcohol_status, Smoking_status)|>
+                   summarise(n = n())|>
+                   group_by(Alcohol_status)|>
+                   summarize(count = sum(n), prop = sum(Smoking_status * n) / sum(n))|> #prop of those who smoke
+                   collect()
+
+grouped_sleep10 |>
+  mutate(Alcohol_status = as.factor(Alcohol_status))|>
+  ggplot(aes(x = Alcohol_status, y = prop))+
+  geom_col(width = 0.3)+
+  labs(title = "Proportion of smokers who consume alcohol")+
+  xlab("Alcohol consumption status")+
+  ylab("Proportion")
+```
+
+
+#Modelling
+
+##Split data into training and testing
+```{r}
+# Split data into training and testing set
+sleep_split <- sleep_clean |>
+               sdf_random_split(training = 0.8,
+                                testing = 0.2,
+                                seed = 1337)
+
+sleep_train <- sleep_split$training
+sleep_test <- sleep_split$testing
+
+# There are 325 observations in sleep_train
+sleep_train |>
+  summarise(count())
+attach(sleep_train)
+sleep_clean |>
+  summarise(count())
+```
+
+##Model 1
+```{r}
+# ml1 <- sleep_train |>
+#        ml_linear_regression(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time)|>
+#         tidy()
+# ml1
+```
+
+
+##Model 2
+```{r}
+#removing all insignificant variables
+ml2 <- sleep_train |>
+       ml_linear_regression(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time-Gender-Sleep_duration-Deep_sleep_percentage-Caffeine_consumption)|>
+       tidy()
+ml2
+```
+
+##Model 3
+```{r}
+#adding caffiene consumption
+ml3 <- sleep_train |>
+       ml_linear_regression(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time-Gender-Sleep_duration-Deep_sleep_percentage)|>
+       tidy()
+
+ml3
+```
+
+##Model 1 Cross Validation
+```{r}
+pipeline1 <- ml_pipeline(sc) |>
+             ft_r_formula(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time)|>
+             ml_linear_regression()
+
+grid <- list(linear_regression = list(elastic_net_param = 0, reg_param = 0))
+
+cv <- ml_cross_validator(
+  sc,
+  estimator = pipeline1,
+  evaluator = ml_regression_evaluator(
+              sc,
+              label_col = "Sleep_efficiency"),
+  estimator_param_maps = grid,
+  num_folds = 10,
+  parallelism = 1,
+  seed = 1337
+)
+
+pipeline_model1 <- ml_fit(cv,sleep_train)
+rmse1 <- ml_validation_metrics(pipeline_model1);rmse1
+```
+
+
+##Model 2 Cross Validation
+```{r}
+pipeline2 <- ml_pipeline(sc) |>
+             ft_r_formula(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time-Gender-Sleep_duration-Deep_sleep_percentage-Caffeine_consumption)|>
+             ml_linear_regression()
+
+grid <- list(linear_regression = list(elastic_net_param = 0, reg_param = 0))
+
+cv <- ml_cross_validator(
+  sc,
+  estimator = pipeline2,
+  evaluator = ml_regression_evaluator(
+              sc,
+              label_col = "Sleep_efficiency"),
+  estimator_param_maps = grid,
+  num_folds = 10,
+  parallelism = 1,
+  seed = 1337
+)
+
+pipeline_model2 <- ml_fit(cv,sleep_train)
+rmse2 <- ml_validation_metrics(pipeline_model2);rmse2
+```
+
+##Model 3 Cross Validation
+```{r}
+pipeline3 <- ml_pipeline(sc) |>
+             ft_r_formula(formula = Sleep_efficiency ~ . -Bedtime -Wakeup_time-Gender-Sleep_duration-Deep_sleep_percentage)|>
+             ml_linear_regression()
+
+grid <- list(linear_regression = list(elastic_net_param = 0, reg_param = 0))
+
+cv <- ml_cross_validator(
+  sc,
+  estimator = pipeline3,
+  evaluator = ml_regression_evaluator(
+              sc,
+              label_col = "Sleep_efficiency"),
+  estimator_param_maps = grid,
+  num_folds = 10,
+  parallelism = 1,
+  seed = 1337
+)
+
+pipeline_model3 <- ml_fit(cv,sleep_train)
+rmse3 <- ml_validation_metrics(pipeline_model3);rmse3
+```
+
+##RMSE plot
+```{r}
+rmse_df <- data.frame(model = c(1,2,3),
+                      rmse = c(rmse1$rmse,rmse2$rmse,rmse3$rmse)) |>
+           mutate(model = as.factor(model))
+
+rmse_plot <- rmse_df |>
+            ggplot(aes(x = model, y = rmse, group = 1)) +
+            geom_point() +
+            geom_line(color = "deepskyblue") +
+            geom_text(aes(label = round(rmse,5)), vjust = -0.5)+
+            labs(title = "Plot of RMSE by Model", x = "Model", y = "RMSE")
+
+rmse_plot
+```
+
+##Creating vectors for pipeline
+```{r}
+all_str_variables <- sleep |>
+                     select_if(is.character)|>
+                     names()
+
+all_variables_ml3 <- ml3$term[-1]
+str_variables_ml3 <- intersect(all_str_variables, all_variables_ml3)
+num_variables_ml3 <- setdiff(all_variables_ml3, str_variables_ml3)
+```
+
+##Creating pipeline with for loop
+```{r}
+pipeline <- ml_pipeline(sc) |>
+            ft_vector_assembler(input_col = num_variables_ml3,
+                                output_col = "features") |>
+            ft_standard_scaler(input_col = "features",
+                               output_col = "stdz_features",
+                               with_mean = TRUE)
+
+encoder_input_vec <- c()
+for (variable in str_variables_ml3) {
+  output_col <- paste0(variable, "_indexed")
+  pipeline <- pipeline |>
+                        ft_string_indexer(
+                        input_col = variable,
+                        output_col = paste0(variable, "_indexed"))
+  encoder_input_vec <- c(encoder_input_vec, output_col)
+}
+
+
+encoder_output_vec <- c()
+for (variable in encoder_input_vec) {
+  output_col <- paste0(sub("_indexed", "", variable), "_encoded")
+  pipeline <- pipeline |>
+                        ft_one_hot_encoder(
+                        input_cols = variable,
+                        output_col = paste0(sub("_indexed", "", variable), "_encoded"))
+  encoder_output_vec <- c(encoder_output_vec , output_col)
+}
+
+input_vector <- c("stdz_features", encoder_output_vec)
+
+pipeline <- pipeline |>
+            ft_vector_assembler(
+            input_cols =  input_vector,
+            output_col = "final_features") |>
+
+            ml_linear_regression(
+            features_col = "final_features",
+            label_col = "Sleep_efficiency")
+
+pipeline
+```
+
+##Cross Validation to tune hyperparameters
+```{r}
+ncores <- detectCores(logical = FALSE)
+grid <- list(linear_regression = list(elastic_net_param = c(0, 1), reg_param = c(0.001, 0.01) ))
+
+cv <- ml_cross_validator(
+  sc,
+  estimator = pipeline,
+  estimator_param_maps = grid,
+  evaluator = ml_regression_evaluator(sc,
+                                      label_col = "Sleep_efficiency"),
+  num_folds = 10,
+  parallelism = ncores,
+  seed = 1337
+)
+```
+
+##Employ CV estimator to training set
+```{r}
+cv_model <- ml_fit(cv,sleep_train);cv_model
+```
+
+##Inspect cross validation result
+```{r}
+ml_validation_metrics(cv_model) |>
+  arrange(rmse)
+```
+
+##Best model and its coefficient
+```{r}
+ml_stage(cv_model$best_model, stage = "linear_regression")
+ml_stage(cv_model$best_model, stage = "linear_regression")$coefficients
+```
+
+##Using the best model to predict sleep efficienct on test set
+```{r}
+predictions <- ml_transform(cv_model, sleep_test)|>
+               collect()
+glimpse(predictions)
+```
+
+##Predicted vs Actual sleep efficiency plot
+```{r}
+predictions |>
+  ggplot(aes(x = prediction, y = Sleep_efficiency)) +
+  geom_point(color = "deepskyblue4", size = 2) +
+  geom_abline(color = "deepskyblue2", linetype = "dashed") +
+  labs(
+    x = "Predicted sleep efficiency",
+    y = "Actual sleep efficiency",
+    title = "Predicted vs Actual sleep efficiency"
+  )
+```
+
+#Plumblr
+```{r}
+# # api.R
+# #' Predict Sleep Efficiency
+# #' @param Bedtime Numeric
+# #' @param Wakeup_time Numeric
+# #' @param Gender Numeric
+# #' @param Sleep_duration Numeric
+# #' @param Deep_sleep_percentage Numeric
+# #' @get /predict
+# function(Bedtime, Wakeup_time, Gender, Sleep_duration, Deep_sleep_percentage) {
+#   new_data <- data.frame(Bedtime = as.numeric(Bedtime), Wakeup_time = as.numeric(Wakeup_time), Gender = as.numeric(Gender), Sleep_duration = as.numeric(Sleep_duration), Deep_sleep_percentage = as.numeric(Deep_sleep_percentage))
+#   prediction <- predict(pipeline_model3, new_data)
+#   list(sleep_efficiency = prediction)
+# }
+```
+```{r}
+saveRDS(cv_model, "cv_model.rds")
+```
+
+```{r}
+r <- plumb("plumber.R")
+r$run(port = 8000)
+```
+```{r}
+class(cv_model)
+```
+
+
