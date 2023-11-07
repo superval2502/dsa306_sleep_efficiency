@@ -15,3 +15,6 @@
 - alcohol consumption (the amount of alcohol consumed in the 24 hours prior to bedtime (in oz))
 - smoking status (categorical)
 - exercise frequency (the amount of alcohol consumed in the 24 hours prior to bedtime (in oz))
+
+## Dataset
+[Kaggle](https://www.kaggle.com/datasets/equilibriumm/sleep-efficiency)
