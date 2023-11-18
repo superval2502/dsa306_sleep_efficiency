@@ -1,4 +1,5 @@
 # Predicting Sleep Efficiency
+This project aims to predict sleep efficiency based on various factors like age, sleep patterns, and lifestyle choices. It utilizes a machine learning model loaded in Sparklyr and returns a sleep efficiency score.
 
 ## Variables:
 - age
@@ -17,4 +18,4 @@
 - exercise frequency (the amount of alcohol consumed in the 24 hours prior to bedtime (in oz))
 
 ## Dataset
-Source: [Kaggle](https://www.kaggle.com/datasets/equilibriumm/sleep-efficiency)
+**Source:** [Kaggle](https://www.kaggle.com/datasets/equilibriumm/sleep-efficiency)
