@@ -11,7 +11,7 @@ This project aims to predict sleep efficiency based on various factors like age,
 - Sleep efficiency – a measure of the proportion of time in bed spent asleep
 - Rem sleep percentage - the percentage of total sleep time spent in REM sleep
 - Deep sleep percentage - the percentage of total sleep time spent in deep sleep
-- Light sleep percentage ¬- the percentage of total sleep time spent in light sleep
+- Light sleep percentage - the percentage of total sleep time spent in light sleep
 - Awakenings - the number of times the test subject wakes up during the night
 - Caffeine consumption - the amount of caffeine consumed in the 24 hours prior to bedtime (in mg)
 - Alcohol consumption – the amount of alcohol consumed in the 24 hours prior to bedtime (in oz)
