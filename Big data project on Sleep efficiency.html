@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Predicting Sleep efficiency</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Untitled_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Untitled_files/libs/quarto-html/quarto.js"></script>
+<script src="Untitled_files/libs/quarto-html/popper.min.js"></script>
+<script src="Untitled_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Untitled_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Untitled_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Untitled_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Untitled_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Untitled_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Untitled_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="Untitled_files/libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<script src="Untitled_files/libs/plotly-binding-4.10.2/plotly.js"></script>
+<script src="Untitled_files/libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="Untitled_files/libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="Untitled_files/libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="Untitled_files/libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="Untitled_files/libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="Untitled_files/libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicting Sleep efficiency</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p><strong>1. Introduction</strong></p>
+<p>Sleep is key to maintaining a healthy lifestyle. However, it is often overlooked in today's fast paced world. Sleep efficiency plays a crucial role in insomnia research and it is a commonly used metric to assess sleep quality. By using this sleep efficiency dataset from Morocco, we aim to explore the factors influencing sleep efficiency in a different cultural and geographical context. Understanding the dynamics of sleep patterns and efficiency in Morocco can provide valuable insights into the broader issue of sleep deprivation and its impact on individuals and societies.</p>
+<p>While it is true that Singapore is often associated with its competitive nature and struggles with sleep, it is crucial to acknowledge that such issues are not unique to Singapore. Morocco, like many other nations, faces its own unique challenges when it comes to sleep patterns and efficiency. By examining sleep efficiency in Morocco, this project will contribute to the broader conversation about sleep health and its implications, ultimately helping to spur data-driven solutions that can improve sleep patterns and overall well-being on a global scale. Through this project, we aim to predict sleep efficiency based on various factors like age, sleep patterns, and lifestyle choices using a multiple linear regression model.</p>
+<p><strong>Dataset</strong></p>
+<p>Our dataset is sourced from Kaggle. The variables include <em>ID</em>, <em>Age, Gender, Bedtime, Wakeuptime, Sleep duration, Sleep efficiency, REM sleep percentage, Deep Sleep percentage, Light sleep percentage, Awakenings, Caffeine consumption, Alcohol consumption, Smoking status and Exercise frequency</em>. The understanding and data type of each variable is further explained in our codebook.</p>
+<p><strong>Connection to Spark</strong></p>
+<p>We initiated a connection to a local Spark cluster and read our Sleep_efficiency.csv file into a Spark DataFrame by employing spark_read_csv(). After which, we saved and read our Parquet file using the spark_write_parquet() and spark_read_parquet() functions. We chose the Apache Parquet format as it allows for efficient data storage and retrieval especially when handling large datasets.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow);<span class="fu">library</span>(sparklyr);<span class="fu">library</span>(dplyr);<span class="fu">library</span>(ggplot2);<span class="fu">library</span>(dbplot);<span class="fu">library</span>(corrr);<span class="fu">library</span>(doParallel);<span class="fu">library</span>(plotly);<span class="fu">library</span>(plumber)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'arrow'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:utils':
+
+    timestamp</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'sparklyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    filter</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: foreach</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: iterators</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: parallel</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'plotly'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:ggplot2':
+
+    last_plot</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:arrow':
+
+    schema</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    filter</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:graphics':
+
+    layout</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sc <span class="ot">&lt;-</span> <span class="fu">spark_connect</span>(<span class="at">master =</span> <span class="st">"local"</span>, <span class="at">version =</span> <span class="st">"3.4.0"</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>sleep_csv <span class="ot">&lt;-</span> <span class="fu">spark_read_csv</span>(sc,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Sleep"</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">path =</span> <span class="fu">paste0</span>(<span class="st">"file://"</span>, <span class="fu">getwd</span>(), <span class="st">"/Sleep_Efficiency.csv"</span>))</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>parquet_path <span class="ot">&lt;-</span> <span class="st">"Sleep_parquet"</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">spark_write_parquet</span>(sleep_csv, <span class="at">path =</span> parquet_path, <span class="at">mode=</span><span class="st">"overwrite"</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>sleep <span class="ot">&lt;-</span> <span class="fu">spark_read_parquet</span>(sc, <span class="at">path =</span> parquet_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Data Cleaning</strong></p>
+<p>We start off our analysis with data cleaning, first removing rows with nulls, then the ID variable, as they are not needed in our analysis. We then changed <em>smoking_status</em> and <em>gender</em> to binary integer variables instead of categorical variables, changed <em>awakenings</em> to integer, and converted <em>Bedtime</em> and <em>Wakeup_time</em> to hour format. This brings us to 386 observations of 14 variables in our final sleep_clean dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sleep_clean <span class="ot">&lt;-</span> sleep <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>               <span class="fu">filter_all</span>(<span class="fu">all_vars</span>(<span class="sc">!</span><span class="fu">is.na</span>(.)))<span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>               <span class="fu">select</span>(<span class="sc">-</span>ID) <span class="sc">|&gt;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>               <span class="fu">mutate</span>(<span class="at">Smoking_status =</span> <span class="fu">as.integer</span>(<span class="fu">ifelse</span>(Smoking_status <span class="sc">==</span> <span class="st">"Yes"</span>, <span class="dv">1</span>, <span class="dv">0</span>)),</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Awakenings =</span> <span class="fu">as.integer</span>(Awakenings),</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Gender =</span> <span class="fu">as.integer</span>(<span class="fu">ifelse</span>(Gender <span class="sc">==</span> <span class="st">"Female"</span>, <span class="dv">1</span>, <span class="dv">0</span>)),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Bedtime =</span> (<span class="fu">hour</span>(Bedtime)),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Wakeup_time =</span> (<span class="fu">hour</span>(Wakeup_time)))</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(sleep_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: ??</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in arrow_collect(object, ...): NAs introduced by coercion to integer
+range</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Columns: 14
+Database: spark_connection
+$ Age                    &lt;int&gt; 65, 69, 40, 40, 57, 27, 53, 41, 11, 50, 55, 30,…
+$ Gender                 &lt;int&gt; 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1,…
+$ Bedtime                &lt;int&gt; 1, 2, 21, 2, 1, 21, 0, 2, 1, 0, 22, 2, 1, 1, 22…
+$ Wakeup_time            &lt;int&gt; 7, 9, 5, 8, 9, 3, 10, 8, 10, 8, 6, 11, 9, 10, 5…
+$ Sleep_duration         &lt;dbl&gt; 6.0, 7.0, 8.0, 6.0, 8.0, 6.0, 10.0, 6.0, 9.0, 8…
+$ Sleep_efficiency       &lt;dbl&gt; 0.88, 0.66, 0.89, 0.51, 0.76, 0.54, 0.90, 0.79,…
+$ REM_sleep_percentage   &lt;int&gt; 18, 24, 20, 28, 27, 28, 28, 28, 18, 28, 18, 24,…
+$ Deep_sleep_percentage  &lt;int&gt; 70, 28, 70, 25, 55, 25, 57, 60, 35, 57, 60, 63,…
+$ Light_sleep_percentage &lt;int&gt; 10, 53, 10, 52, 18, 52, 20, 17, 45, 20, 22, 18,…
+$ Awakenings             &lt;int&gt; 0, 3, 1, 3, 3, 2, 0, 3, 4, 1, 0, 0, 4, 2, 0, 4,…
+$ Caffeine_consumption   &lt;dbl&gt; 0, 0, 0, 50, 0, 50, 50, 50, 0, 50, 0, 50, 0, 25…
+$ Alcohol_consumption    &lt;dbl&gt; 0, 3, 0, 5, 3, 0, 0, 0, 3, 0, 0, 0, 0, 1, 2, 2,…
+$ Smoking_status         &lt;int&gt; 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1,…
+$ Exercise_frequency     &lt;dbl&gt; 3, 3, 3, 1, 3, 1, 3, 1, 0, 3, 3, 1, 3, 0, 5, 0,…</code></pre>
+</div>
+</div>
+<p><strong>Summary Statistics</strong></p>
+<p>Next, we examined the summary statistics to understand our data further. The average age across the participants is 41 years old, ranging from the youngest at 9 years to the oldest at 69 years old. The average sleep efficiency is 79%, slightly below the National Sleep Foundation (NSF) recommended level at 85%. On average, the participants wake up 1 to 2 times throughout the night. Additionally, exercise frequency is relatively low, typically occurring once or twice a week. On average, participants consume a relatively low amount of caffeine and alcohol, about 23 mg and 1.2 oz respectively. Summary statistics for binary variables are computed to ensure that their minimum and maximum value are 0 and 1 respectively.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>sleep_clean<span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sdf_describe</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># Source: spark&lt;?&gt; [?? x 15]
+  summary Age         Gender Bedtime Wakeup_time Sleep_duration Sleep_efficiency
+  &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;          &lt;chr&gt;           
+1 count   386         386    386     386         386            386             
+2 mean    40.9715025… 0.497… 10.601… 6.89637305… 7.45077720207… 0.7902849740932…
+3 stddev  13.2919941… 0.500… 10.549… 2.00768324… 0.88503395905… 0.1352925512472…
+4 min     9           0      0       3           5.0            0.5             
+5 max     69          1      23      12          10.0           0.99            
+# ℹ 8 more variables: REM_sleep_percentage &lt;chr&gt;, Deep_sleep_percentage &lt;chr&gt;,
+#   Light_sleep_percentage &lt;chr&gt;, Awakenings &lt;chr&gt;, Caffeine_consumption &lt;chr&gt;,
+#   Alcohol_consumption &lt;chr&gt;, Smoking_status &lt;chr&gt;, Exercise_frequency &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p><strong>2. Exploratory Data Analysis and Visualization</strong></p>
+<p>In this section, we performed exploratory data analysis to analyse and identify trends amongst our variables.</p>
+<p><strong>Histogram Frequency plot</strong></p>
+<p>Firstly, we explored 14 variables in the dataset by generating histograms to understand their distribution. From our frequency plots, we can draw the following insights:</p>
+<ol type="1">
+<li><p>Sleep efficiency is relatively high ranging between 0.8 to 0.9.</p></li>
+<li><p>Age of the participants is concentrated around 25 to 50 years old.</p></li>
+<li><p>The number of males and females in the dataset appears to be relatively balanced.</p></li>
+<li><p>Most of the participants experience 7 to 8 hours of sleep per night.</p></li>
+<li><p>The majority of the participants exercise 0 or 3 times a week.</p></li>
+<li><p>The contrasting patterns of <em>Deep_sleep_percentage</em> and <em>Light_sleep_percentage</em> suggest a potentially high correlation between the two variables.</p></li>
+<li><p>The majority of the participants woke up 0 or 1 time throughout the night which could explain the relatively high sleep efficiency.</p></li>
+<li><p>The distribution of <em>Caffeine_consumption</em> is skewed to the right, suggesting that most participants consumed little to no caffeine.</p></li>
+<li><p>Alcohol consumption is relatively low as the majority appears to consume 0 oz throughout the day.</p></li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>sleep_clean_df <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">collect</span>() </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (col <span class="cf">in</span> <span class="fu">names</span>(sleep_clean_df)){</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  graphs <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(sleep_clean_df, <span class="fu">aes_string</span>(<span class="at">x =</span> col)) <span class="sc">+</span> </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.15</span>, <span class="at">fill =</span> <span class="st">"skyblue"</span>, <span class="at">color =</span> <span class="st">"black"</span>)<span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Histogram of"</span>, col), <span class="at">x =</span> col, <span class="at">y =</span> <span class="st">"Frequency"</span>)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(graphs)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
+ℹ Please use tidy evaluation idioms with `aes()`.
+ℹ See also `vignette("ggplot2-in-packages")` for more information.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-5-14.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Correlation plot</strong></p>
+<p>From the correlation plot, <em>Deep_sleep_percentage</em> has the highest correlation with <em>light_sleep_percentage</em> with a correlation coefficient of -0.99. <em>Awakenings</em> has a negative relationship with <em>sleep_efficiency</em> with a correlation coefficient of -0.57, suggesting that as the frequency of awakenings increases, sleep efficiency decreases. Additionally, <em>Deep_sleep_percentage</em> appears to have a strong positive correlation with <em>sleep_efficiency</em> while <em>Light_sleep_percentage</em> has a strong negative correlation with <em>sleep_efficiency</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>sleep_corr <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>            <span class="fu">correlate</span>(<span class="at">use =</span> <span class="st">"pairwise.complete.obs"</span>, <span class="at">method =</span> <span class="st">"pearson"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>            <span class="fu">shave</span>(<span class="at">upper =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rplot</span>(<span class="at">print_cor =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>            <span class="fu">scale_x_discrete</span>(<span class="at">guide =</span> <span class="fu">guide_axis</span>(<span class="at">angle =</span> <span class="dv">45</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>New names:
+Correlation method: 'pearson' Missing treated using: 'pairwise.complete.obs'
+• `` -&gt; `...1`
+• `` -&gt; `...2`
+• `` -&gt; `...3`
+• `` -&gt; `...4`
+• `` -&gt; `...5`
+• `` -&gt; `...6`
+• `` -&gt; `...7`
+• `` -&gt; `...8`
+• `` -&gt; `...9`
+• `` -&gt; `...10`
+• `` -&gt; `...11`
+• `` -&gt; `...12`
+• `` -&gt; `...13`
+• `` -&gt; `...14`</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>sleep_corr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep1 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">mutate</span>(<span class="at">Alcohol_status =</span> <span class="fu">ifelse</span>(Alcohol_consumption <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>),<span class="dv">1</span>,<span class="dv">0</span>))<span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">group_by</span>(Alcohol_status, Smoking_status)<span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())<span class="sc">|&gt;</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">group_by</span>(Alcohol_status)<span class="sc">|&gt;</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">summarize</span>(<span class="at">count =</span> <span class="fu">sum</span>(n), <span class="at">prop =</span> <span class="fu">sum</span>(Smoking_status <span class="sc">*</span> n) <span class="sc">/</span> <span class="fu">sum</span>(n))<span class="sc">|&gt;</span> <span class="co">#prop of those who smoke</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by "Alcohol_status". You can override using
+the `.groups` argument.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Missing values are always removed in SQL aggregation functions.
+Use `na.rm = TRUE` to silence this warning
+This warning is displayed once every 8 hours.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by "Alcohol_status". You can override using
+the `.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep1 <span class="sc">|&gt;</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Alcohol_status =</span> <span class="fu">as.factor</span>(Alcohol_status))<span class="sc">|&gt;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Alcohol_status, <span class="at">y =</span> prop))<span class="sc">+</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.3</span>)<span class="sc">+</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Proportion of smokers who consume alcohol"</span>)<span class="sc">+</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Alcohol consumption status"</span>)<span class="sc">+</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Proportion"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Chi-square test for independence for Alcohol consumption and Smoking status</strong></p>
+<p>The above plot plot shows that Alcohol_consumption and Smoking_status do not seem to correlate with each other as there is no significant difference between the proportion of smokers who do and do not consume alcohol. Hence, this motivates the use of the chi-square test for independence. Since p-value = 0.5436 &gt; 0.05, we do not reject the null hypothesis at the 5% level of significance and conclude that there is sufficient evidence that smoking status and alcohol consumption are independent.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>contingency_table <span class="ot">&lt;-</span> sleep_clean<span class="sc">|&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">mutate</span>(<span class="at">Alcohol_status =</span> <span class="fu">as.integer</span>(<span class="fu">ifelse</span>(Alcohol_consumption <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>),<span class="dv">1</span>,<span class="dv">0</span>)))<span class="sc">|&gt;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">sdf_crosstab</span>(<span class="st">"Smoking_status"</span>, <span class="st">"Alcohol_status"</span>)<span class="sc">|&gt;</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">collect</span>()<span class="sc">|&gt;</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">sapply</span>(as.numeric)<span class="sc">|&gt;</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">as.matrix</span>()</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>contingency_matrix <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">60</span>,<span class="dv">111</span>,<span class="dv">60</span>,<span class="dv">94</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="fu">chisq.test</span>(contingency_matrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test with Yates' continuity correction
+
+data:  contingency_matrix
+X-squared = 0.36889, df = 1, p-value = 0.5436</code></pre>
+</div>
+</div>
+<p><strong>Relationship between Average sleep efficiency and Smoking status</strong></p>
+<p>This plot shows the 95% confidence interval of average sleep efficiency for smokers and non-smokers respectively. The dashed line represents the average sleep efficiency (about 0.79) of all the participants regardless of their smoking status. Compared to their smoking counterparts, non-smokers experience a higher sleep efficiency of 0.82 as opposed to 0.72. Furthermore, their sleep efficiency is higher than the overall average. Hence, smoking does have an effect on sleep efficiency.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>smoke_prop_data <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">group_by</span>(Smoking_status) <span class="sc">|&gt;</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">summarise</span>(</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">sd_sleep_efficiency =</span> <span class="fu">sd</span>(Sleep_efficiency, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                      <span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">mutate</span>(<span class="at">se =</span> sd_sleep_efficiency<span class="sc">/</span><span class="fu">sqrt</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">collect</span>()</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>average_sleep_eff_df <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">summarise</span>(<span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency))<span class="sc">|&gt;</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">collect</span>()</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>average_sleep_eff_vec <span class="ot">&lt;-</span> average_sleep_eff_df<span class="sc">$</span>avg_sleep_efficiency</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a><span class="co">#plotting relationship between smoking status and sleep efficiency</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>smoke_prop_data <span class="sc">|&gt;</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Smoking_status =</span> <span class="fu">as.factor</span>(Smoking_status))<span class="sc">|&gt;</span></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Smoking_status, <span class="at">y =</span> avg_sleep_efficiency))<span class="sc">+</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> avg_sleep_efficiency <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>se,</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>                    <span class="at">ymax =</span> avg_sleep_efficiency <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>se),</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>                    <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> average_sleep_eff_vec, <span class="at">linetype =</span> <span class="st">"dashed"</span>)<span class="sc">+</span></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep efficiency based on smoking status"</span>)<span class="sc">+</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Smoking status"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Average sleep efficiency and Gender</strong></p>
+<p>Similarly, the interval plot shows the 95% confidence interval for average sleep efficiency of both male and female. Dashed line represents the average sleep efficiency regardless of gender. Females experience a slightly higher sleep quality as compared to males, and the overall average. However, there is no significant difference in average sleep efficiency between the two groups. Hence gender does not affect sleep efficiency.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>gender_prop_data <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">group_by</span>(Gender) <span class="sc">|&gt;</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">summarise</span>(<span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency),</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">sd_sleep_efficiency =</span> <span class="fu">sd</span>(Sleep_efficiency),</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">n =</span> <span class="fu">n</span>())<span class="sc">|&gt;</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">mutate</span>(<span class="at">se =</span> sd_sleep_efficiency<span class="sc">/</span><span class="fu">sqrt</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">collect</span>()</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>gender_prop_data <span class="sc">|&gt;</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Gender =</span> <span class="fu">as.factor</span>(Gender)) <span class="sc">|&gt;</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Gender, <span class="at">y =</span> avg_sleep_efficiency))<span class="sc">+</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> avg_sleep_efficiency <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>se,</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>                    <span class="at">ymax =</span> avg_sleep_efficiency <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>se),</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>                    <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> average_sleep_eff_vec, <span class="at">linetype =</span> <span class="st">"dashed"</span>)<span class="sc">+</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep efficiency based on gender"</span>)<span class="sc">+</span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Gender"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Age, Sleep duration and Sleep efficiency</strong></p>
+<p>From the line graph, participants in their early 30s experienced a significant drop in sleep efficiency, despite having the second longest sleeping duration across all age groups. This suggests that they might have trouble falling asleep which implies that they spend more time awake while in bed. Therefore, a longer sleep duration does not necessarily lead to a higher sleep efficiency.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep2 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span> </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">group_by</span>(Age) <span class="sc">|&gt;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">summarise</span>(<span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency))<span class="sc">|&gt;</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">collect</span>() </span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>grouped_sleep2 <span class="sc">|&gt;</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Age, <span class="at">y =</span> avg_sleep_efficiency)) <span class="sc">+</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep efficiency by age"</span>)<span class="sc">+</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Age"</span>)<span class="sc">+</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep3 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                <span class="fu">group_by</span>(Age) <span class="sc">|&gt;</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                <span class="fu">summarise</span>(<span class="at">avg_sleep_duration =</span> <span class="fu">mean</span>(Sleep_duration))<span class="sc">|&gt;</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                <span class="fu">collect</span>() </span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>grouped_sleep3 <span class="sc">|&gt;</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Age, <span class="at">y =</span> avg_sleep_duration)) <span class="sc">+</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep duration by age"</span>)<span class="sc">+</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep duration"</span>)<span class="sc">+</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Age"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Sleep efficiency and Awakenings</strong></p>
+<p>From the box plot, sleep efficiency is the highest when participants did not wake up during the night. The average sleep efficiency is 0.92, surpassing the NSF's recommended value of 0.85. Sleep efficiency is approximately 0.7 for individuals who woke up 2, 3 or 4 times during the night. This indicates that Awakenings might be useful to predict sleep efficiency for individuals experiencing less disrupted sleep.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">as.factor</span>(Awakenings), <span class="at">y =</span> Sleep_efficiency)) <span class="sc">+</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Awakenings"</span>) <span class="sc">+</span></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Sleep efficiency"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Sleep efficiency and Caffeine consumption</strong></p>
+<p>One can experience varying levels of sleep efficiency even when 0 mg of caffeine is consumed. As shown in the raster plot, there are outliers that show that sleep efficiency can be as high as 0.9 even when a high dose of caffeine is consumed. Hence, caffeine consumption might not be a significant variable. Moreover, the box plot shows that caffeine consumption does not seem to affect Awakenings as well. This suggests that caffeine might not necessarily affect sleep efficiency in this context. Nonetheless, if a larger sample size or additional information about the timing of caffeine consumption were available, it might provide a clearer understanding of this relationship.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dbplot_raster</span>(<span class="at">x =</span> Caffeine_consumption, <span class="at">y =</span> Sleep_efficiency, <span class="at">fill =</span> <span class="fu">n</span>(), <span class="at">resolution =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep4 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">group_by</span>(Awakenings)<span class="sc">|&gt;</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">summarise</span>(<span class="at">Caffeine_consumption_percentile =</span> <span class="fu">percentile</span>(Caffeine_consumption, <span class="fu">array</span>(<span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.75</span>)))<span class="sc">|&gt;</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">mutate</span>(<span class="at">Caffeine_consumption_percentile =</span> <span class="fu">explode</span>(Caffeine_consumption_percentile))<span class="sc">|&gt;</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">collect</span>()</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>grouped_sleep4 <span class="sc">|&gt;</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Awakenings =</span> <span class="fu">as.factor</span>(Awakenings))<span class="sc">|&gt;</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Awakenings, <span class="at">y =</span> Caffeine_consumption_percentile))<span class="sc">+</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"The effects of Caffeine consumption on Awakenings"</span>)<span class="sc">+</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Caffeine consumption"</span>)<span class="sc">+</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Awakenings"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Sleep efficiency and Alcohol consumption</strong></p>
+<p>The interval plot shows the 95% confidence interval for average sleep efficiency based on the alcohol consumption level. In general, an increase in alcohol consumption generally results in decreased sleep efficiency.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>alcohol_prop_data <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Alcohol_consumption) <span class="sc">|&gt;</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_sleep_efficiency =</span> <span class="fu">sd</span>(Sleep_efficiency, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>()</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">se =</span> sd_sleep_efficiency<span class="sc">/</span><span class="fu">sqrt</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Alcohol_consumption) <span class="sc">|&gt;</span></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>alcohol_prop_data <span class="sc">|&gt;</span></span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Alcohol_consumption, <span class="at">y =</span> avg_sleep_efficiency))<span class="sc">+</span></span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> avg_sleep_efficiency <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>se,</span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">ymax =</span> avg_sleep_efficiency <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>se),</span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>                    <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> average_sleep_eff_vec, <span class="at">linetype =</span> <span class="st">"dashed"</span>)<span class="sc">+</span></span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep efficiency based alcohol consumption"</span>)<span class="sc">+</span></span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Alcohol consumption (in oz)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Sleep efficiency and Exercise frequency</strong></p>
+<p>The interval plot shows the 95% confidence interval for average sleep efficiency based on the exercise frequency. We can observe that exercising generally improves sleep efficiency, but the benefits of exercising more than once a week is hard to discern because the confidence intervals for frequencies 1 to 5 all overlap the average sleep efficiency level.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>exercise_prop_data <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">group_by</span>(Exercise_frequency) <span class="sc">|&gt;</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">summarise</span>(<span class="at">avg_sleep_efficiency =</span> <span class="fu">mean</span>(Sleep_efficiency),</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">sd_sleep_efficiency =</span> <span class="fu">sd</span>(Sleep_efficiency),</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">n =</span> <span class="fu">n</span>())<span class="sc">|&gt;</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">mutate</span>(<span class="at">se =</span> sd_sleep_efficiency<span class="sc">/</span><span class="fu">sqrt</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">arrange</span>(Exercise_frequency) <span class="sc">|&gt;</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">collect</span>()</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a><span class="co">#plotting relationship between exercise and sleep efficiency</span></span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>exercise_prop_data <span class="sc">|&gt;</span></span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Exercise_frequency, <span class="at">y =</span> avg_sleep_efficiency))<span class="sc">+</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>)<span class="sc">+</span></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> avg_sleep_efficiency <span class="sc">-</span> <span class="fl">1.96</span><span class="sc">*</span>se,</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>                    <span class="at">ymax =</span> avg_sleep_efficiency <span class="sc">+</span> <span class="fl">1.96</span><span class="sc">*</span>se),</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">width =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> average_sleep_eff_vec, <span class="at">linetype =</span> <span class="st">"dashed"</span>)<span class="sc">+</span></span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average sleep efficiency based on exercise"</span>)<span class="sc">+</span></span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Exercise Frequency (per week)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>Relationship between Bedtime and Sleep efficiency</strong></p>
+<p>The plot shows the average sleep efficiency across various bedtimes. The size of the points represents the number of individuals who slept at each time. Majority of the participants tend to sleep at either 10pm or 12am. Sleep efficiency is the highest when individuals go to bed at 10pm and starts to drop thereafter.</p>
+<p>Upon closer examination, the plot shows the scatter plots after filtering for cases where sleep efficiency was above average level of 0.79, and sleep duration was at least 7 hours.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep5 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">group_by</span>(Bedtime)<span class="sc">|&gt;</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">ave_sleep =</span> <span class="fu">mean</span>(Sleep_efficiency))<span class="sc">|&gt;</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">arrange</span>(<span class="fu">desc</span>(ave_sleep))<span class="sc">|&gt;</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">collect</span>()</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>bedtime_plot <span class="ot">&lt;-</span> grouped_sleep5 <span class="sc">|&gt;</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>                <span class="fu">mutate</span>(<span class="at">Bedtime =</span> <span class="fu">as.factor</span>(Bedtime)) <span class="sc">|&gt;</span></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>                <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>Bedtime, <span class="at">y=</span>ave_sleep))<span class="sc">+</span></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>                <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">size =</span> n))<span class="sc">+</span></span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>                <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"The effects of Bedtime on Sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>                <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>                <span class="fu">xlab</span>(<span class="st">"Bedtime in 24 Hours"</span>)<span class="sc">+</span></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>                <span class="fu">theme_minimal</span>()</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplotly</span>(bedtime_plot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-b8dc3ff54288bbb8e222" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-b8dc3ff54288bbb8e222">{"x":{"data":[{"x":[5,4,6,1,2,3],"y":[0.8277922077922073,0.8115,0.79095238095238107,0.78571428571428559,0.76516666666666688,0.74982142857142875],"text":["Bedtime: 22<br />ave_sleep: 0.8277922<br />n: 77","Bedtime: 21<br />ave_sleep: 0.8115000<br />n: 60","Bedtime: 23<br />ave_sleep: 0.7909524<br />n: 42","Bedtime: 0<br />ave_sleep: 0.7857143<br />n: 91","Bedtime: 1<br />ave_sleep: 0.7651667<br />n: 60","Bedtime: 2<br />ave_sleep: 0.7498214<br />n: 56"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":[19.750946546050709,15.233225702009321,3.7795275590551185,22.677165354330711,15.233225702009321,13.880739851808165],"symbol":"circle","line":{"width":1.8897637795275593,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.762557077625573,"r":7.3059360730593621,"b":40.182648401826498,"l":48.949771689497723},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724},"title":{"text":"The effects of Bedtime on Sleep efficiency","font":{"color":"rgba(0,0,0,1)","family":"","size":17.534246575342465},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.40000000000000002,6.5999999999999996],"tickmode":"array","ticktext":["0","1","2","21","22","23"],"tickvals":[1,2,3,3.9999999999999996,5,6],"categoryorder":"array","categoryarray":["0","1","2","21","22","23"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.6529680365296811,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"y","title":{"text":"Bedtime in 24 Hours","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.74592288961038977,0.83169074675324628],"tickmode":"array","ticktext":["0.75","0.77","0.79","0.81","0.83"],"tickvals":[0.75,0.77000000000000002,0.79000000000000004,0.81000000000000005,0.82999999999999996],"categoryorder":"array","categoryarray":["0.75","0.77","0.79","0.81","0.83"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.6529680365296811,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"x","title":{"text":"Average sleep efficiency","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.68949771689498},"title":{"text":"n","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"9c12384055b2":{"x":{},"y":{},"size":{},"type":"scatter"}},"cur_data":"9c12384055b2","visdat":{"9c12384055b2":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>grouped_sleep6 <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">group_by</span>(Bedtime, Sleep_duration)<span class="sc">|&gt;</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">ave_sleep =</span> <span class="fu">mean</span>(Sleep_efficiency))<span class="sc">|&gt;</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">arrange</span>(<span class="fu">desc</span>(ave_sleep))<span class="sc">|&gt;</span></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">filter</span>(ave_sleep<span class="sc">&gt;</span><span class="fl">0.79</span> <span class="sc">&amp;</span> Sleep_duration<span class="sc">&gt;</span><span class="dv">6</span>) <span class="sc">|&gt;</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by "Bedtime". You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>bedtime_plot <span class="ot">&lt;-</span> grouped_sleep6 <span class="sc">|&gt;</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>                <span class="fu">mutate</span>(<span class="at">Bedtime =</span> <span class="fu">as.factor</span>(Bedtime)) <span class="sc">|&gt;</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>                <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>Bedtime, <span class="at">y=</span>ave_sleep))<span class="sc">+</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>                <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">size =</span> n))<span class="sc">+</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>                <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour=</span> Sleep_duration))<span class="sc">+</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>                <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"The effects of Bedtime on Sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                <span class="fu">ylab</span>(<span class="st">"Average sleep efficiency"</span>)<span class="sc">+</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>                <span class="fu">xlab</span>(<span class="st">"Bedtime in 24 Hours"</span>)<span class="sc">+</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>                <span class="fu">theme_minimal</span>()</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplotly</span>(bedtime_plot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-49250d8ceeacc886902e" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-49250d8ceeacc886902e">{"x":{"data":[{"x":[2,5,5,2,6,1,4,3,1,5,5,4,4,3,5],"y":[0.92000000000000004,0.91000000000000003,0.8933333333333332,0.85125000000000006,0.84750000000000003,0.84714285714285709,0.84647058823529409,0.83499999999999996,0.82576923076923059,0.82513513513513514,0.82499999999999984,0.81571428571428584,0.8136363636363636,0.80285714285714282,0.79999999999999993],"text":["Bedtime: 1<br />ave_sleep: 0.9200000<br />n:  1","Bedtime: 22<br />ave_sleep: 0.9100000<br />n:  1","Bedtime: 22<br />ave_sleep: 0.8933333<br />n:  9","Bedtime: 1<br />ave_sleep: 0.8512500<br />n:  8","Bedtime: 23<br />ave_sleep: 0.8475000<br />n: 12","Bedtime: 0<br />ave_sleep: 0.8471429<br />n:  7","Bedtime: 21<br />ave_sleep: 0.8464706<br />n: 17","Bedtime: 2<br />ave_sleep: 0.8350000<br />n:  2","Bedtime: 0<br />ave_sleep: 0.8257692<br />n: 26","Bedtime: 22<br />ave_sleep: 0.8251351<br />n: 37","Bedtime: 22<br />ave_sleep: 0.8250000<br />n: 20","Bedtime: 21<br />ave_sleep: 0.8157143<br />n: 21","Bedtime: 21<br />ave_sleep: 0.8136364<br />n: 11","Bedtime: 2<br />ave_sleep: 0.8028571<br />n:  7","Bedtime: 22<br />ave_sleep: 0.8000000<br />n:  3"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":[3.7795275590551185,3.7795275590551185,12.687959448019498,12.112602554534144,14.225589890883153,11.494455882781663,16.377952755905511,6.9291338582677167,19.527559055118111,22.677165354330711,17.508343129261966,17.864995133856944,13.739457197380723,11.494455882781663,8.2337435035373083],"symbol":"circle","line":{"width":1.8897637795275593,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[2,5,5,2,6,1,4,3,1,5,5,4,4,3,5],"y":[0.92000000000000004,0.91000000000000003,0.8933333333333332,0.85125000000000006,0.84750000000000003,0.84714285714285709,0.84647058823529409,0.83499999999999996,0.82576923076923059,0.82513513513513514,0.82499999999999984,0.81571428571428584,0.8136363636363636,0.80285714285714282,0.79999999999999993],"text":["Bedtime: 1<br />ave_sleep: 0.9200000<br />Sleep_duration: 10.0","Bedtime: 22<br />ave_sleep: 0.9100000<br />Sleep_duration:  8.5","Bedtime: 22<br />ave_sleep: 0.8933333<br />Sleep_duration:  7.5","Bedtime: 1<br />ave_sleep: 0.8512500<br />Sleep_duration:  7.5","Bedtime: 23<br />ave_sleep: 0.8475000<br />Sleep_duration:  7.0","Bedtime: 0<br />ave_sleep: 0.8471429<br />Sleep_duration:  8.5","Bedtime: 21<br />ave_sleep: 0.8464706<br />Sleep_duration:  7.5","Bedtime: 2<br />ave_sleep: 0.8350000<br />Sleep_duration: 10.0","Bedtime: 0<br />ave_sleep: 0.8257692<br />Sleep_duration:  8.0","Bedtime: 22<br />ave_sleep: 0.8251351<br />Sleep_duration:  7.0","Bedtime: 22<br />ave_sleep: 0.8250000<br />Sleep_duration:  8.0","Bedtime: 21<br />ave_sleep: 0.8157143<br />Sleep_duration:  7.0","Bedtime: 21<br />ave_sleep: 0.8136364<br />Sleep_duration:  8.0","Bedtime: 2<br />ave_sleep: 0.8028571<br />Sleep_duration:  8.0","Bedtime: 22<br />ave_sleep: 0.8000000<br />Sleep_duration:  9.0"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":["rgba(86,177,247,1)","rgba(51,106,152,1)","rgba(29,63,94,1)","rgba(29,63,94,1)","rgba(19,43,67,1)","rgba(51,106,152,1)","rgba(29,63,94,1)","rgba(86,177,247,1)","rgba(40,84,122,1)","rgba(19,43,67,1)","rgba(40,84,122,1)","rgba(19,43,67,1)","rgba(40,84,122,1)","rgba(40,84,122,1)","rgba(62,129,183,1)"],"opacity":1,"size":5.6692913385826778,"symbol":"circle","line":{"width":1.8897637795275593,"color":["rgba(86,177,247,1)","rgba(51,106,152,1)","rgba(29,63,94,1)","rgba(29,63,94,1)","rgba(19,43,67,1)","rgba(51,106,152,1)","rgba(29,63,94,1)","rgba(86,177,247,1)","rgba(40,84,122,1)","rgba(19,43,67,1)","rgba(40,84,122,1)","rgba(19,43,67,1)","rgba(40,84,122,1)","rgba(40,84,122,1)","rgba(62,129,183,1)"]}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1],"y":[0.80000000000000004],"name":"99_81a6dbad3cd30e51587619bbf20ca2df","type":"scatter","mode":"markers","opacity":0,"hoverinfo":"skip","showlegend":false,"marker":{"color":[0,1],"colorscale":[[0,"#132B43"],[0.0033444816053510942,"#132B44"],[0.006688963210702485,"#132C44"],[0.01003344481605358,"#142C45"],[0.013377926421404673,"#142D45"],[0.016722408026755769,"#142D46"],[0.020066889632107159,"#142D46"],[0.023411371237458251,"#142E47"],[0.026755852842809347,"#152E47"],[0.030100334448160442,"#152F48"],[0.033444816053511829,"#152F48"],[0.036789297658862928,"#152F49"],[0.04013377926421402,"#153049"],[0.043478260869565112,"#16304A"],[0.046822742474916502,"#16304A"],[0.050167224080267601,"#16314B"],[0.053511705685618693,"#16314B"],[0.056856187290969785,"#16324C"],[0.060200668896321176,"#17324D"],[0.063545150501672268,"#17324D"],[0.066889632107023367,"#17334E"],[0.070234113712374466,"#17334E"],[0.073578595317725856,"#17344F"],[0.076923076923076941,"#18344F"],[0.08026755852842804,"#183450"],[0.083612040133779139,"#183550"],[0.08695652173913053,"#183551"],[0.090301003344481615,"#183651"],[0.093645484949832714,"#193652"],[0.096989966555183812,"#193652"],[0.1003344481605352,"#193753"],[0.10367892976588629,"#193754"],[0.10702341137123739,"#193854"],[0.11036789297658878,"#1A3855"],[0.11371237458193988,"#1A3955"],[0.11705685618729096,"#1A3956"],[0.12040133779264206,"#1A3956"],[0.12374581939799345,"#1A3A57"],[0.12709030100334454,"#1B3A57"],[0.13043478260869565,"#1B3B58"],[0.13377926421404673,"#1B3B59"],[0.13712374581939812,"#1B3B59"],[0.14046822742474921,"#1C3C5A"],[0.14381270903010032,"#1C3C5A"],[0.14715719063545141,"#1C3D5B"],[0.1505016722408028,"#1C3D5B"],[0.15384615384615388,"#1C3D5C"],[0.157190635451505,"#1D3E5C"],[0.16053511705685608,"#1D3E5D"],[0.16387959866220747,"#1D3F5D"],[0.16722408026755856,"#1D3F5E"],[0.17056856187290967,"#1D3F5F"],[0.17391304347826075,"#1E405F"],[0.17725752508361214,"#1E4060"],[0.18060200668896323,"#1E4160"],[0.18394648829431434,"#1E4161"],[0.18729096989966543,"#1E4261"],[0.19063545150501682,"#1F4262"],[0.1939799331103679,"#1F4263"],[0.19732441471571902,"#1F4363"],[0.20066889632107041,"#1F4364"],[0.20401337792642149,"#1F4464"],[0.20735785953177258,"#204465"],[0.21070234113712369,"#204465"],[0.21404682274247477,"#204566"],[0.21739130434782616,"#204566"],[0.22073578595317725,"#214667"],[0.22408026755852836,"#214668"],[0.22742474916387975,"#214768"],[0.23076923076923084,"#214769"],[0.23411371237458192,"#214769"],[0.23745819397993304,"#22486A"],[0.24080267558528412,"#22486A"],[0.24414715719063551,"#22496B"],[0.2474916387959866,"#22496C"],[0.25083612040133768,"#224A6C"],[0.25418060200668907,"#234A6D"],[0.25752508361204018,"#234A6D"],[0.2608695652173913,"#234B6E"],[0.26421404682274235,"#234B6E"],[0.26755852842809374,"#244C6F"],[0.27090301003344486,"#244C70"],[0.27424749163879597,"#244C70"],[0.27759197324414703,"#244D71"],[0.28093645484949842,"#244D71"],[0.28428093645484953,"#254E72"],[0.28762541806020064,"#254E72"],[0.2909698996655517,"#254F73"],[0.29431438127090309,"#254F74"],[0.2976588628762542,"#254F74"],[0.30100334448160532,"#265075"],[0.30434782608695637,"#265075"],[0.30769230769230776,"#265176"],[0.31103678929765888,"#265176"],[0.31438127090300999,"#275277"],[0.31772575250836138,"#275278"],[0.32107023411371244,"#275278"],[0.32441471571906355,"#275379"],[0.32775919732441466,"#275379"],[0.33110367892976572,"#28547A"],[0.33444816053511711,"#28547B"],[0.3377926421404685,"#28557B"],[0.34113712374581934,"#28557C"],[0.34448160535117073,"#28567C"],[0.34782608695652151,"#29567D"],[0.3511705685618729,"#29567D"],[0.35451505016722429,"#29577E"],[0.35785953177257507,"#29577F"],[0.36120401337792646,"#2A587F"],[0.36454849498327729,"#2A5880"],[0.36789297658862868,"#2A5980"],[0.37123745819398007,"#2A5981"],[0.37458193979933085,"#2A5982"],[0.37792642140468224,"#2B5A82"],[0.38127090301003363,"#2B5A83"],[0.38461538461538441,"#2B5B83"],[0.38795986622073581,"#2B5B84"],[0.3913043478260872,"#2C5C85"],[0.39464882943143803,"#2C5C85"],[0.39799331103678942,"#2C5D86"],[0.40133779264214081,"#2C5D86"],[0.40468227424749159,"#2C5D87"],[0.40802675585284298,"#2D5E87"],[0.41137123745819376,"#2D5E88"],[0.41471571906354515,"#2D5F89"],[0.41806020066889654,"#2D5F89"],[0.42140468227424738,"#2E608A"],[0.42474916387959877,"#2E608A"],[0.42809364548494955,"#2E618B"],[0.43143812709030094,"#2E618C"],[0.43478260869565233,"#2E618C"],[0.43812709030100311,"#2F628D"],[0.4414715719063545,"#2F628D"],[0.44481605351170589,"#2F638E"],[0.44816053511705672,"#2F638F"],[0.45150501672240811,"#30648F"],[0.4548494983277595,"#306490"],[0.45819397993311028,"#306590"],[0.46153846153846168,"#306591"],[0.46488294314381245,"#306592"],[0.46822742474916385,"#316692"],[0.47157190635451524,"#316693"],[0.47491638795986607,"#316793"],[0.47826086956521746,"#316794"],[0.48160535117056824,"#326895"],[0.48494983277591963,"#326895"],[0.48829431438127102,"#326996"],[0.4916387959866218,"#326996"],[0.49498327759197319,"#326997"],[0.49832775919732458,"#336A98"],[0.50167224080267536,"#336A98"],[0.50501672240802675,"#336B99"],[0.50836120401337814,"#336B99"],[0.51170568561872898,"#346C9A"],[0.51505016722408037,"#346C9B"],[0.51839464882943176,"#346D9B"],[0.52173913043478259,"#346D9C"],[0.52508361204013398,"#346E9D"],[0.52842809364548471,"#356E9D"],[0.5317725752508361,"#356E9E"],[0.53511705685618749,"#356F9E"],[0.53846153846153832,"#356F9F"],[0.54180602006688972,"#3670A0"],[0.54515050167224055,"#3670A0"],[0.54849498327759194,"#3671A1"],[0.55183946488294333,"#3671A1"],[0.55518394648829406,"#3772A2"],[0.55852842809364545,"#3772A3"],[0.56187290969899684,"#3773A3"],[0.56521739130434767,"#3773A4"],[0.56856187290969906,"#3773A4"],[0.57190635451505045,"#3874A5"],[0.57525083612040129,"#3874A6"],[0.57859531772575268,"#3875A6"],[0.5819397993311034,"#3875A7"],[0.58528428093645479,"#3976A8"],[0.58862876254180618,"#3976A8"],[0.59197324414715702,"#3977A9"],[0.59531772575250841,"#3977A9"],[0.5986622073578598,"#3978AA"],[0.60200668896321063,"#3A78AB"],[0.60535117056856202,"#3A79AB"],[0.60869565217391275,"#3A79AC"],[0.61204013377926414,"#3A79AC"],[0.61538461538461553,"#3B7AAD"],[0.61872909698996637,"#3B7AAE"],[0.62207357859531776,"#3B7BAE"],[0.62541806020066915,"#3B7BAF"],[0.62876254180601998,"#3C7CB0"],[0.63210702341137137,"#3C7CB0"],[0.63545150501672276,"#3C7DB1"],[0.63879598662207349,"#3C7DB1"],[0.64214046822742488,"#3C7EB2"],[0.64548494983277571,"#3D7EB3"],[0.6488294314381271,"#3D7FB3"],[0.65217391304347849,"#3D7FB4"],[0.65551839464882933,"#3D7FB5"],[0.65886287625418072,"#3E80B5"],[0.66220735785953144,"#3E80B6"],[0.66555183946488283,"#3E81B6"],[0.66889632107023422,"#3E81B7"],[0.67224080267558506,"#3F82B8"],[0.67558528428093645,"#3F82B8"],[0.67892976588628784,"#3F83B9"],[0.68227424749163867,"#3F83BA"],[0.68561872909699006,"#4084BA"],[0.68896321070234146,"#4084BB"],[0.69230769230769218,"#4085BB"],[0.69565217391304357,"#4085BC"],[0.69899665551839496,"#4086BD"],[0.7023411371237458,"#4186BD"],[0.70568561872909719,"#4186BE"],[0.70903010033444802,"#4187BF"],[0.71237458193979941,"#4187BF"],[0.71571906354515014,"#4288C0"],[0.71906354515050153,"#4288C1"],[0.72240802675585292,"#4289C1"],[0.72575250836120375,"#4289C2"],[0.72909698996655514,"#438AC2"],[0.73244147157190653,"#438AC3"],[0.73578595317725737,"#438BC4"],[0.73913043478260876,"#438BC4"],[0.74247491638796015,"#438CC5"],[0.74581939799331087,"#448CC6"],[0.74916387959866226,"#448DC6"],[0.75250836120401365,"#448DC7"],[0.75585284280936449,"#448EC8"],[0.75919732441471588,"#458EC8"],[0.76254180602006727,"#458FC9"],[0.76588628762541811,"#458FC9"],[0.7692307692307695,"#458FCA"],[0.77257525083612022,"#4690CB"],[0.77591973244147161,"#4690CB"],[0.77926421404682245,"#4691CC"],[0.78260869565217384,"#4691CD"],[0.78595317725752523,"#4792CD"],[0.78929765886287606,"#4792CE"],[0.79264214046822745,"#4793CF"],[0.79598662207357884,"#4793CF"],[0.79933110367892957,"#4894D0"],[0.80267558528428096,"#4894D0"],[0.80602006688963235,"#4895D1"],[0.80936454849498318,"#4895D2"],[0.81270903010033457,"#4896D2"],[0.81605351170568596,"#4996D3"],[0.8193979933110368,"#4997D4"],[0.82274247491638819,"#4997D4"],[0.82608695652173891,"#4998D5"],[0.8294314381270903,"#4A98D6"],[0.83277591973244114,"#4A99D6"],[0.83612040133779253,"#4A99D7"],[0.83946488294314392,"#4A9AD8"],[0.84280936454849475,"#4B9AD8"],[0.84615384615384615,"#4B9BD9"],[0.84949832775919754,"#4B9BDA"],[0.85284280936454826,"#4B9BDA"],[0.85618729096989965,"#4C9CDB"],[0.85953177257525104,"#4C9CDB"],[0.86287625418060188,"#4C9DDC"],[0.86622073578595327,"#4C9DDD"],[0.86956521739130466,"#4D9EDD"],[0.87290969899665549,"#4D9EDE"],[0.87625418060200688,"#4D9FDF"],[0.87959866220735827,"#4D9FDF"],[0.882943143812709,"#4DA0E0"],[0.88628762541806039,"#4EA0E1"],[0.88963210702341122,"#4EA1E1"],[0.89297658862876261,"#4EA1E2"],[0.89632107023411345,"#4EA2E3"],[0.89966555183946484,"#4FA2E3"],[0.90301003344481623,"#4FA3E4"],[0.90635451505016695,"#4FA3E5"],[0.90969899665551834,"#4FA4E5"],[0.91304347826086973,"#50A4E6"],[0.91638795986622057,"#50A5E7"],[0.91973244147157196,"#50A5E7"],[0.92307692307692335,"#50A6E8"],[0.92642140468227419,"#51A6E8"],[0.92976588628762558,"#51A7E9"],[0.93311036789297697,"#51A7EA"],[0.93645484949832769,"#51A8EA"],[0.93979933110367908,"#52A8EB"],[0.94314381270902992,"#52A9EC"],[0.94648829431438131,"#52A9EC"],[0.94983277591973214,"#52AAED"],[0.95317725752508353,"#53AAEE"],[0.95652173913043492,"#53ABEE"],[0.95986622073578565,"#53ABEF"],[0.96321070234113704,"#53ACF0"],[0.96655518394648843,"#54ACF0"],[0.96989966555183926,"#54ADF1"],[0.97324414715719065,"#54ADF2"],[0.97658862876254204,"#54AEF2"],[0.97993311036789288,"#55AEF3"],[0.98327759197324427,"#55AFF4"],[0.98662207357859566,"#55AFF4"],[0.98996655518394638,"#55B0F5"],[0.99331103678929777,"#56B0F6"],[0.99665551839464916,"#56B1F6"],[1,"#56B1F7"]],"colorbar":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"thickness":23.039999999999996,"title":"Sleep_duration","titlefont":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724},"tickmode":"array","ticktext":["7","8","9","10"],"tickvals":[0,0.33333333333333331,0.66666666666666663,1],"tickfont":{"color":"rgba(0,0,0,1)","family":"","size":11.68949771689498},"ticklen":2,"len":0.5}},"xaxis":"x","yaxis":"y","frame":null}],"layout":{"margin":{"t":43.762557077625573,"r":7.3059360730593621,"b":40.182648401826498,"l":54.794520547945211},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724},"title":{"text":"The effects of Bedtime on Sleep efficiency","font":{"color":"rgba(0,0,0,1)","family":"","size":17.534246575342465},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.40000000000000002,6.5999999999999996],"tickmode":"array","ticktext":["0","1","2","21","22","23"],"tickvals":[1,2,3,3.9999999999999996,5,6],"categoryorder":"array","categoryarray":["0","1","2","21","22","23"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.6529680365296811,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"y","title":{"text":"Bedtime in 24 Hours","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.79399999999999993,0.92600000000000005],"tickmode":"array","ticktext":["0.800","0.825","0.850","0.875","0.900","0.925"],"tickvals":[0.80000000000000004,0.82500000000000007,0.85000000000000009,0.875,0.90000000000000002,0.92500000000000004],"categoryorder":"array","categoryarray":["0.800","0.825","0.850","0.875","0.900","0.925"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.6529680365296811,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"x","title":{"text":"Average sleep efficiency","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.68949771689498},"title":{"text":"n","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"9c125af7c930":{"x":{},"y":{},"size":{},"type":"scatter"},"9c1241b99cf8":{"x":{},"y":{},"colour":{}}},"cur_data":"9c125af7c930","visdat":{"9c125af7c930":["function (y) ","x"],"9c1241b99cf8":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><strong>3. Data Modelling in Spark</strong></p>
+<p>In this section, we aim to use machine learning models to conduct predictive modelling. We used multiple linear regression to predict sleep efficiency. The first model includes all the variables except for <em>Bedtime</em> and <em>Wakeup_time</em> to avoid perfect collinearity problem as they have a linear relationship with <em>Sleep_duration</em>. In the second model, <em>Deep_sleep_percentage</em> is removed to avoid multicollinearity as it is highly correlated with <em>Light_sleep_percentage</em>. Additionally, our visualisations have shown that <em>Gender, Sleep_duration</em> and <em>Caffeine_consumption</em> does not affect sleep efficiency. Moreover, given that their p-value in the first regression is more than 0.05, it suggests that they are not statistically significant. Hence they are excluded from our second model. Lastly, the third model is the same as the second model but includes <em>Caffeine_consumption</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>sleep_split <span class="ot">&lt;-</span> sleep_clean <span class="sc">|&gt;</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>               <span class="fu">sdf_random_split</span>(<span class="at">training =</span> <span class="fl">0.8</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>                                <span class="at">testing =</span> <span class="fl">0.2</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>                                <span class="at">seed =</span> <span class="dv">1337</span>)</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>sleep_train <span class="ot">&lt;-</span> sleep_split<span class="sc">$</span>training</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>sleep_test <span class="ot">&lt;-</span> sleep_split<span class="sc">$</span>testing</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>ml1 <span class="ot">&lt;-</span> sleep_train <span class="sc">|&gt;</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">ml_linear_regression</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time)<span class="sc">|&gt;</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tidy</span>()</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>ml1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 5
+   term                    estimate std.error statistic  p.value
+   &lt;chr&gt;                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+ 1 (Intercept)             0.811     0.148        5.49  8.12e- 8
+ 2 Age                     0.000611  0.000265     2.30  2.19e- 2
+ 3 Gender                  0.00247   0.00753      0.328 7.43e- 1
+ 4 Sleep_duration         -0.000614  0.00372     -0.165 8.69e- 1
+ 5 REM_sleep_percentage    0.00410   0.00105      3.91  1.15e- 4
+ 6 Deep_sleep_percentage   0.000852  0.00163      0.523 6.01e- 1
+ 7 Light_sleep_percentage -0.00482   0.00169     -2.86  4.49e- 3
+ 8 Awakenings             -0.0307    0.00267    -11.5   0       
+ 9 Caffeine_consumption    0.000145  0.000129     1.12  2.63e- 1
+10 Alcohol_consumption    -0.00723   0.00227     -3.18  1.62e- 3
+11 Smoking_status         -0.0472    0.00725     -6.51  2.96e-10
+12 Exercise_frequency      0.00568   0.00250      2.27  2.38e- 2</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>ml2 <span class="ot">&lt;-</span> sleep_train <span class="sc">|&gt;</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">ml_linear_regression</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time<span class="sc">-</span>Gender<span class="sc">-</span>Sleep_duration<span class="sc">-</span>Deep_sleep_percentage<span class="sc">-</span>Caffeine_consumption)<span class="sc">|&gt;</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">tidy</span>()</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>ml2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 8 × 5
+  term                    estimate std.error statistic  p.value
+  &lt;chr&gt;                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             0.884     0.0241       36.7  0       
+2 Age                     0.000531  0.000248      2.14 3.32e- 2
+3 REM_sleep_percentage    0.00406   0.000865      4.69 4.07e- 6
+4 Light_sleep_percentage -0.00567   0.000262    -21.7  0       
+5 Awakenings             -0.0312    0.00260     -12.0  0       
+6 Alcohol_consumption    -0.00753   0.00225      -3.34 9.31e- 4
+7 Smoking_status         -0.0475    0.00711      -6.68 1.05e-10
+8 Exercise_frequency      0.00490   0.00236       2.07 3.88e- 2</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>ml3 <span class="ot">&lt;-</span> sleep_train <span class="sc">|&gt;</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">ml_linear_regression</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time<span class="sc">-</span>Gender<span class="sc">-</span>Sleep_duration<span class="sc">-</span>Deep_sleep_percentage)<span class="sc">|&gt;</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">tidy</span>()</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>ml3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 5
+  term                    estimate std.error statistic  p.value
+  &lt;chr&gt;                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)             0.883     0.0241       36.6  0       
+2 Age                     0.000568  0.000250      2.27 2.36e- 2
+3 REM_sleep_percentage    0.00383   0.000883      4.34 1.96e- 5
+4 Light_sleep_percentage -0.00570   0.000262    -21.7  0       
+5 Awakenings             -0.0307    0.00263     -11.7  0       
+6 Caffeine_consumption    0.000157  0.000125      1.26 2.09e- 1
+7 Alcohol_consumption    -0.00722   0.00226      -3.19 1.57e- 3
+8 Smoking_status         -0.0472    0.00710      -6.65 1.29e-10
+9 Exercise_frequency      0.00534   0.00239       2.24 2.59e- 2</code></pre>
+</div>
+</div>
+<p><strong>10-Fold Cross-Validation</strong></p>
+<p>To find the best model, we employed a 10-fold cross-validation by using <em>ml_cross_validator()</em> to compare their Root Mean Squared Error (RMSE). The parameters of <em>elastic_net_param</em> and <em>reg_param</em> are set to zero to perform the least squares. (Ridge regression without penalty). From the RMSE plot, it shows that the RMSE for Model 2 is the lowest (0.05933). Nonetheless, Model 3 with added the variable: caffeine_consumption, is still chosen to be the best model to predict sleep efficiency. As this plot employs ggplot(), it is important to note that the axes are automatically scaled and the difference in RMSE between the models differ slightly in absolute terms despite the huge drop reflected in the line graph.</p>
+<p>Despite the slight increase in Model 3's RMSE, we still chose to include <em>caffeine_consumption</em> in our final model. The prevalence of tea drinking as part of Moroccan culture explains the relatively low amount of caffeine consumed (about 23 mg) per person. However, it is still an important variable to predict sleep efficiency for individuals outside Morocco, where higher levels of caffeine consumption is more prevalent.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>pipeline1 <span class="ot">&lt;-</span> <span class="fu">ml_pipeline</span>(sc) <span class="sc">|&gt;</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ft_r_formula</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time)<span class="sc">|&gt;</span> </span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ml_linear_regression</span>()</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">linear_regression =</span> <span class="fu">list</span>(<span class="at">elastic_net_param =</span> <span class="dv">0</span>, <span class="at">reg_param =</span> <span class="dv">0</span>))</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">ml_cross_validator</span>(</span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>  sc,</span>
+<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator =</span> pipeline1,</span>
+<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">evaluator =</span> <span class="fu">ml_regression_evaluator</span>(</span>
+<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>              sc, </span>
+<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">label_col =</span> <span class="st">"Sleep_efficiency"</span>),</span>
+<span id="cb56-13"><a href="#cb56-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator_param_maps =</span> grid,</span>
+<span id="cb56-14"><a href="#cb56-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">num_folds =</span> <span class="dv">10</span>,</span>
+<span id="cb56-15"><a href="#cb56-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallelism =</span> <span class="dv">1</span>,</span>
+<span id="cb56-16"><a href="#cb56-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1337</span></span>
+<span id="cb56-17"><a href="#cb56-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb56-18"><a href="#cb56-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-19"><a href="#cb56-19" aria-hidden="true" tabindex="-1"></a>pipeline_model1 <span class="ot">&lt;-</span> <span class="fu">ml_fit</span>(cv,sleep_train)</span>
+<span id="cb56-20"><a href="#cb56-20" aria-hidden="true" tabindex="-1"></a>rmse1 <span class="ot">&lt;-</span> <span class="fu">ml_validation_metrics</span>(pipeline_model1);rmse1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        rmse elastic_net_param_1 reg_param_1
+1 0.05987477                   0           0</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>pipeline2 <span class="ot">&lt;-</span> <span class="fu">ml_pipeline</span>(sc) <span class="sc">|&gt;</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ft_r_formula</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time<span class="sc">-</span>Gender<span class="sc">-</span>Sleep_duration<span class="sc">-</span>Deep_sleep_percentage<span class="sc">-</span>Caffeine_consumption)<span class="sc">|&gt;</span> </span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ml_linear_regression</span>()</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">linear_regression =</span> <span class="fu">list</span>(<span class="at">elastic_net_param =</span> <span class="dv">0</span>, <span class="at">reg_param =</span> <span class="dv">0</span>))</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">ml_cross_validator</span>(</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>  sc,</span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator =</span> pipeline2,</span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">evaluator =</span> <span class="fu">ml_regression_evaluator</span>(</span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>              sc, </span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">label_col =</span> <span class="st">"Sleep_efficiency"</span>),</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator_param_maps =</span> grid,</span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">num_folds =</span> <span class="dv">10</span>,</span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallelism =</span> <span class="dv">1</span>,</span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1337</span></span>
+<span id="cb58-17"><a href="#cb58-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb58-18"><a href="#cb58-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-19"><a href="#cb58-19" aria-hidden="true" tabindex="-1"></a>pipeline_model2 <span class="ot">&lt;-</span> <span class="fu">ml_fit</span>(cv,sleep_train)</span>
+<span id="cb58-20"><a href="#cb58-20" aria-hidden="true" tabindex="-1"></a>rmse2 <span class="ot">&lt;-</span> <span class="fu">ml_validation_metrics</span>(pipeline_model2);rmse2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        rmse reg_param_1 elastic_net_param_1
+1 0.05933476           0                   0</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>pipeline3 <span class="ot">&lt;-</span> <span class="fu">ml_pipeline</span>(sc) <span class="sc">|&gt;</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ft_r_formula</span>(<span class="at">formula =</span> Sleep_efficiency <span class="sc">~</span> . <span class="sc">-</span>Bedtime <span class="sc">-</span>Wakeup_time<span class="sc">-</span>Gender<span class="sc">-</span>Sleep_duration<span class="sc">-</span>Deep_sleep_percentage)<span class="sc">|&gt;</span> </span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ml_linear_regression</span>()</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">linear_regression =</span> <span class="fu">list</span>(<span class="at">elastic_net_param =</span> <span class="dv">0</span>, <span class="at">reg_param =</span> <span class="dv">0</span>))</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">ml_cross_validator</span>(</span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>  sc,</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator =</span> pipeline3,</span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">evaluator =</span> <span class="fu">ml_regression_evaluator</span>(</span>
+<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a>              sc, </span>
+<span id="cb60-12"><a href="#cb60-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">label_col =</span> <span class="st">"Sleep_efficiency"</span>),</span>
+<span id="cb60-13"><a href="#cb60-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator_param_maps =</span> grid,</span>
+<span id="cb60-14"><a href="#cb60-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">num_folds =</span> <span class="dv">10</span>,</span>
+<span id="cb60-15"><a href="#cb60-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallelism =</span> <span class="dv">1</span>,</span>
+<span id="cb60-16"><a href="#cb60-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1337</span></span>
+<span id="cb60-17"><a href="#cb60-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb60-18"><a href="#cb60-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-19"><a href="#cb60-19" aria-hidden="true" tabindex="-1"></a>pipeline_model3 <span class="ot">&lt;-</span> <span class="fu">ml_fit</span>(cv,sleep_train)</span>
+<span id="cb60-20"><a href="#cb60-20" aria-hidden="true" tabindex="-1"></a>rmse3 <span class="ot">&lt;-</span> <span class="fu">ml_validation_metrics</span>(pipeline_model3);rmse3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        rmse elastic_net_param_1 reg_param_1
+1 0.05943701                   0           0</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>rmse_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">model =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>), </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>                      <span class="at">rmse =</span> <span class="fu">c</span>(rmse1<span class="sc">$</span>rmse,rmse2<span class="sc">$</span>rmse,rmse3<span class="sc">$</span>rmse)) <span class="sc">|&gt;</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>           <span class="fu">mutate</span>(<span class="at">model =</span> <span class="fu">as.factor</span>(model))</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>rmse_plot <span class="ot">&lt;-</span> rmse_df <span class="sc">|&gt;</span></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> model, <span class="at">y =</span> rmse, <span class="at">group =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>            <span class="fu">geom_point</span>() <span class="sc">+</span>  </span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"deepskyblue"</span>) <span class="sc">+</span> </span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>            <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">round</span>(rmse,<span class="dv">5</span>)), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.5</span>)<span class="sc">+</span></span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ylim</span>(<span class="fl">0.058</span>, <span class="fl">0.06</span>)<span class="sc">+</span></span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>            <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Plot of RMSE by Model"</span>, <span class="at">x =</span> <span class="st">"Model"</span>, <span class="at">y =</span> <span class="st">"RMSE"</span>)  </span>
+<span id="cb62-12"><a href="#cb62-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-13"><a href="#cb62-13" aria-hidden="true" tabindex="-1"></a>rmse_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><strong>4. Spark ML pipeline</strong></p>
+<p><strong>Improving Model 3 by tuning its hyperparameters</strong></p>
+<p><u>Final model after hyperparameter tuning:</u></p>
+<p>Sleep_efficiency = 0.757 + 0.00757 <em>Age</em> + 0.0147 <em>REM_sleep_percentage</em> -0.0861 <em>Light_sleep_percentage</em> -0.0422 <em>Awakenings</em> + 0.0043 <em>Caffeine_consumption</em> -0.0128 <em>Alcohol_consumption</em> + 0.0472 <em>Smoking_status</em> + 0.0080 <em>Exercise_frequency</em></p>
+<p>Firstly, a pipeline of 6 stages is created. All numerical variables in Model 3 are standardised with mean equals to 0 and standard deviation equals to 1. Next, <em>Smoking_status</em> is indexed and encoded. Finally, all variables go through the <em>ml_linear_regression()</em> stage. The pipeline was created using a for-loop, as we have treated our dataset as if it were big data with more variables. In reality, there could be more categorical variables in the regression to be indexed and encoded. Therefore, this is a more efficient approach and improves the readability of the pipeline.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>all_str_variables <span class="ot">&lt;-</span> sleep <span class="sc">|&gt;</span> </span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">select_if</span>(is.character)<span class="sc">|&gt;</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">names</span>()</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>all_variables_ml3 <span class="ot">&lt;-</span> ml3<span class="sc">$</span>term[<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>str_variables_ml3 <span class="ot">&lt;-</span> <span class="fu">intersect</span>(all_str_variables, all_variables_ml3)</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>num_variables_ml3 <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(all_variables_ml3, str_variables_ml3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>pipeline <span class="ot">&lt;-</span> <span class="fu">ml_pipeline</span>(sc) <span class="sc">|&gt;</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ft_vector_assembler</span>(<span class="at">input_col =</span> num_variables_ml3,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>                                <span class="at">output_col =</span> <span class="st">"features"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ft_standard_scaler</span>(<span class="at">input_col =</span> <span class="st">"features"</span>,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>                               <span class="at">output_col =</span> <span class="st">"stdz_features"</span>,</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>                               <span class="at">with_mean =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a>encoder_input_vec <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb64-9"><a href="#cb64-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (variable <span class="cf">in</span> str_variables_ml3) {</span>
+<span id="cb64-10"><a href="#cb64-10" aria-hidden="true" tabindex="-1"></a>  output_col <span class="ot">&lt;-</span> <span class="fu">paste0</span>(variable, <span class="st">"_indexed"</span>)</span>
+<span id="cb64-11"><a href="#cb64-11" aria-hidden="true" tabindex="-1"></a>  pipeline <span class="ot">&lt;-</span> pipeline <span class="sc">|&gt;</span></span>
+<span id="cb64-12"><a href="#cb64-12" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">ft_string_indexer</span>(</span>
+<span id="cb64-13"><a href="#cb64-13" aria-hidden="true" tabindex="-1"></a>                        <span class="at">input_col =</span> variable, </span>
+<span id="cb64-14"><a href="#cb64-14" aria-hidden="true" tabindex="-1"></a>                        <span class="at">output_col =</span> <span class="fu">paste0</span>(variable, <span class="st">"_indexed"</span>)) </span>
+<span id="cb64-15"><a href="#cb64-15" aria-hidden="true" tabindex="-1"></a>  encoder_input_vec <span class="ot">&lt;-</span> <span class="fu">c</span>(encoder_input_vec, output_col)</span>
+<span id="cb64-16"><a href="#cb64-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb64-17"><a href="#cb64-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-18"><a href="#cb64-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-19"><a href="#cb64-19" aria-hidden="true" tabindex="-1"></a>encoder_output_vec <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb64-20"><a href="#cb64-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (variable <span class="cf">in</span> encoder_input_vec) {</span>
+<span id="cb64-21"><a href="#cb64-21" aria-hidden="true" tabindex="-1"></a>  output_col <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="fu">sub</span>(<span class="st">"_indexed"</span>, <span class="st">""</span>, variable), <span class="st">"_encoded"</span>)</span>
+<span id="cb64-22"><a href="#cb64-22" aria-hidden="true" tabindex="-1"></a>  pipeline <span class="ot">&lt;-</span> pipeline <span class="sc">|&gt;</span></span>
+<span id="cb64-23"><a href="#cb64-23" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">ft_one_hot_encoder</span>(</span>
+<span id="cb64-24"><a href="#cb64-24" aria-hidden="true" tabindex="-1"></a>                        <span class="at">input_cols =</span> variable, </span>
+<span id="cb64-25"><a href="#cb64-25" aria-hidden="true" tabindex="-1"></a>                        <span class="at">output_col =</span> <span class="fu">paste0</span>(<span class="fu">sub</span>(<span class="st">"_indexed"</span>, <span class="st">""</span>, variable), <span class="st">"_encoded"</span>))</span>
+<span id="cb64-26"><a href="#cb64-26" aria-hidden="true" tabindex="-1"></a>  encoder_output_vec <span class="ot">&lt;-</span> <span class="fu">c</span>(encoder_output_vec , output_col)</span>
+<span id="cb64-27"><a href="#cb64-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb64-28"><a href="#cb64-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-29"><a href="#cb64-29" aria-hidden="true" tabindex="-1"></a>input_vector <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"stdz_features"</span>, encoder_output_vec)</span>
+<span id="cb64-30"><a href="#cb64-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-31"><a href="#cb64-31" aria-hidden="true" tabindex="-1"></a>pipeline <span class="ot">&lt;-</span> pipeline <span class="sc">|&gt;</span></span>
+<span id="cb64-32"><a href="#cb64-32" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ft_vector_assembler</span>(</span>
+<span id="cb64-33"><a href="#cb64-33" aria-hidden="true" tabindex="-1"></a>            <span class="at">input_cols =</span>  input_vector, </span>
+<span id="cb64-34"><a href="#cb64-34" aria-hidden="true" tabindex="-1"></a>            <span class="at">output_col =</span> <span class="st">"final_features"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb64-35"><a href="#cb64-35" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb64-36"><a href="#cb64-36" aria-hidden="true" tabindex="-1"></a>            <span class="fu">ml_linear_regression</span>(</span>
+<span id="cb64-37"><a href="#cb64-37" aria-hidden="true" tabindex="-1"></a>            <span class="at">features_col =</span> <span class="st">"final_features"</span>, </span>
+<span id="cb64-38"><a href="#cb64-38" aria-hidden="true" tabindex="-1"></a>            <span class="at">label_col =</span> <span class="st">"Sleep_efficiency"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, cross validation with different combinations of <em>elastic_net_param</em> from values 0 to 1 is employed. The initial value for <em>reg_param</em> starts from 0.001 instead of 0 because it gives us a model with a lower RMSE. Finally, the improved model has a slightly lower RMSE of 0.05939 with the following hyperparameters – <em>elastic_net_param_1</em> = 0 and <em>reg_param_1</em> = 0.00289.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>ncores <span class="ot">&lt;-</span> <span class="fu">detectCores</span>(<span class="at">logical =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">linear_regression =</span> <span class="fu">list</span>(</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">elastic_net_param =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="dv">0</span>, <span class="at">to =</span> <span class="dv">1</span>, <span class="at">length =</span> <span class="dv">11</span>), </span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">reg_param =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fl">0.001</span>, <span class="at">to =</span> <span class="fl">0.01</span>, <span class="at">length =</span> <span class="dv">20</span>)))</span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">ml_cross_validator</span>(</span>
+<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a>  sc,</span>
+<span id="cb65-9"><a href="#cb65-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator =</span> pipeline,</span>
+<span id="cb65-10"><a href="#cb65-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimator_param_maps =</span> grid,</span>
+<span id="cb65-11"><a href="#cb65-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">evaluator =</span> <span class="fu">ml_regression_evaluator</span>(sc, </span>
+<span id="cb65-12"><a href="#cb65-12" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">label_col =</span> <span class="st">"Sleep_efficiency"</span>),</span>
+<span id="cb65-13"><a href="#cb65-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">num_folds =</span> <span class="dv">10</span>,</span>
+<span id="cb65-14"><a href="#cb65-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallelism =</span> ncores,</span>
+<span id="cb65-15"><a href="#cb65-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1337</span></span>
+<span id="cb65-16"><a href="#cb65-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>cv_model <span class="ot">&lt;-</span> <span class="fu">ml_fit</span>(cv,sleep_train);cv_model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>CrossValidatorModel (Transformer)
+&lt;cross_validator__eac2a309_1e3e_4d19_8cc9_fcef1cc378ca&gt; 
+ (Parameters -- Tuning)
+  estimator: Pipeline
+             &lt;pipeline__597ad816_7977_4884_acef_1774a97ce32b&gt; 
+  evaluator: RegressionEvaluator
+             &lt;regression_evaluator__86146247_f9a7_42ff_bbb9_2c486936bb0c&gt; 
+    with metric rmse 
+  num_folds: 10 
+  [Tuned over 220 hyperparameter sets]
+ (Best Model)
+  PipelineModel (Transformer) with 6 stages
+  &lt;pipeline__597ad816_7977_4884_acef_1774a97ce32b&gt; 
+    Stages 
+    |--1 VectorAssembler (Transformer)
+    |    &lt;vector_assembler__36112013_1312_485f_9592_1fdbe10d902e&gt; 
+    |     (Parameters -- Column Names)
+    |      input_cols: Age, REM_sleep_percentage, Light_sleep_percentage, Awakenings, Caffeine_consumption, Alcohol_consumption, Exercise_frequency
+    |      output_col: features
+    |--2 StandardScalerModel (Transformer)
+    |    &lt;standard_scaler__a0da4b35_0f0f_4299_9328_31bfad42b480&gt; 
+    |     (Parameters -- Column Names)
+    |      input_col: features
+    |      output_col: stdz_features
+    |     (Transformer Info)
+    |      mean:  num [1:7] 41.1 22.98 25.08 1.66 22.31 ... 
+    |      std:  num [1:7] 13.39 3.9 15.49 1.39 28.03 ... 
+    |--3 StringIndexerModel (Transformer)
+    |    &lt;string_indexer__7eb4198f_da0c_4486_9a55_aa2a9f574845&gt; 
+    |     (Parameters -- Column Names)
+    |      input_col: Smoking_status
+    |      output_col: Smoking_status_indexed
+    |     (Transformer Info)
+    |      labels:  chr [1:2] "0" "1" 
+    |--4 OneHotEncoderModel (Transformer)
+    |    &lt;one_hot_encoder__d5bbb267_623a_4ed5_9a0d_d043ed8f7328&gt; 
+    |     (Parameters -- Column Names)
+    |      input_cols: Smoking_status_indexed
+    |      output_col: one_hot_encoder__d5bbb267_623a_4ed5_9a0d_d043ed8f7328__output
+    |      output_cols: Smoking_status_encoded
+    |     (Transformer Info)
+    |      category_sizes:  int 2 
+    |--5 VectorAssembler (Transformer)
+    |    &lt;vector_assembler__a2e94556_948f_4f45_bcc0_fae822fa9527&gt; 
+    |     (Parameters -- Column Names)
+    |      input_cols: stdz_features, Smoking_status_encoded
+    |      output_col: final_features
+    |--6 LinearRegressionModel (Transformer)
+    |    &lt;linear_regression__c9b5e544_f383_4997_8105_176547108b44&gt; 
+    |     (Parameters -- Column Names)
+    |      features_col: final_features
+    |      label_col: Sleep_efficiency
+    |      prediction_col: prediction
+    |     (Transformer Info)
+    |      coefficients:  num [1:8] 0.0075 0.01438 -0.08611 -0.04219 0.00438 ... 
+    |      intercept:  num 0.757 
+    |      num_features:  int 8 
+    |      scale:  num 1 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ml_validation_metrics</span>(cv_model) <span class="sc">|&gt;</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>              <span class="fu">arrange</span>(rmse)<span class="sc">|&gt;</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>              <span class="fu">head</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        rmse elastic_net_param_1 reg_param_1
+1 0.05939788                   0 0.002894737
+2 0.05939823                   0 0.003368421
+3 0.05939934                   0 0.002421053</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ml_stage</span>(cv_model<span class="sc">$</span>best_model, <span class="at">stage =</span> <span class="st">"linear_regression"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>LinearRegressionModel (Transformer)
+&lt;linear_regression__c9b5e544_f383_4997_8105_176547108b44&gt; 
+ (Parameters -- Column Names)
+  features_col: final_features
+  label_col: Sleep_efficiency
+  prediction_col: prediction
+ (Transformer Info)
+  coefficients:  num [1:8] 0.0075 0.01438 -0.08611 -0.04219 0.00438 ... 
+  intercept:  num 0.757 
+  num_features:  int 8 
+  scale:  num 1 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>bestmodel_coeff <span class="ot">&lt;-</span> <span class="fu">ml_stage</span>(cv_model<span class="sc">$</span>best_model, <span class="at">stage =</span> <span class="st">"linear_regression"</span>)<span class="sc">$</span>coefficients</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>bestmodel_coeff</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  0.007503705  0.014378519 -0.086109289 -0.042190082  0.004375454
+[6] -0.012812382  0.008021552  0.047199543</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">ml_transform</span>(cv_model, sleep_test)<span class="sc">|&gt;</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>               <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in arrow_enabled_object.spark_jobj(sdf): Arrow disabled due to columns:
+features, stdz_features, Smoking_status_encoded, final_features</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(predictions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 61
+Columns: 20
+$ Age                    &lt;int&gt; 18, 21, 22, 22, 23, 24, 24, 24, 25, 27, 27, 27,…
+$ Gender                 &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1,…
+$ Bedtime                &lt;int&gt; 0, 0, 21, 23, 23, 0, 0, 2, 22, 23, 23, 0, 1, 21…
+$ Wakeup_time            &lt;int&gt; 8, 9, 3, 6, 7, 7, 9, 8, 6, 6, 7, 7, 8, 4, 4, 5,…
+$ Sleep_duration         &lt;dbl&gt; 8.0, 8.5, 6.0, 7.0, 8.0, 7.5, 8.5, 6.0, 8.0, 7.…
+$ Sleep_efficiency       &lt;dbl&gt; 0.68, 0.87, 0.72, 0.91, 0.80, 0.58, 0.88, 0.78,…
+$ REM_sleep_percentage   &lt;int&gt; 20, 26, 27, 25, 15, 24, 26, 26, 28, 24, 25, 28,…
+$ Deep_sleep_percentage  &lt;int&gt; 30, 63, 55, 65, 65, 28, 63, 60, 57, 25, 20, 60,…
+$ Light_sleep_percentage &lt;int&gt; 48, 18, 18, 17, 15, 53, 18, 16, 21, 52, 55, 17,…
+$ Awakenings             &lt;int&gt; 3, 0, 1, 1, 4, 1, 0, 1, 2, 3, 3, 1, 3, 2, 2, 1,…
+$ Caffeine_consumption   &lt;dbl&gt; 25, 50, 0, 75, 75, 0, 50, 0, 25, 75, 0, 50, 25,…
+$ Alcohol_consumption    &lt;dbl&gt; 2, 0, 5, 1, 0, 2, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0,…
+$ Smoking_status         &lt;int&gt; 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1,…
+$ Exercise_frequency     &lt;dbl&gt; 0, 1, 3, 4, 2, 0, 1, 0, 3, 2, 2, 1, 1, 1, 2, 2,…
+$ features               &lt;list&gt; &lt;18, 20, 48, 3, 25, 2, 0&gt;, &lt;21, 26, 18, 0, 50,…
+$ stdz_features          &lt;list&gt; &lt;-1.72550559, -0.76333571, 1.47963540, 0.96541…
+$ Smoking_status_indexed &lt;dbl&gt; 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1,…
+$ Smoking_status_encoded &lt;list&gt; 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0…
+$ final_features         &lt;list&gt; &lt;-1.72550559, -0.76333571, 1.47963540, 0.96541…
+$ prediction             &lt;dbl&gt; 0.5970352, 0.8565372, 0.8423357, 0.8885480, 0.7…</code></pre>
+</div>
+</div>
+<p>Predict sleep efficiency on the test set using the best model after hyperparameter tuning. This plot shows the actual against predicted sleep efficiency. The model performs relatively well in predicting individuals with sleep efficiency between 0.85 to 0.90.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>predictions <span class="sc">|&gt;</span> </span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> prediction, <span class="at">y =</span> Sleep_efficiency)) <span class="sc">+</span></span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"deepskyblue4"</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">color =</span> <span class="st">"deepskyblue2"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb78-5"><a href="#cb78-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb78-6"><a href="#cb78-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Predicted sleep efficiency"</span>,</span>
+<span id="cb78-7"><a href="#cb78-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Actual sleep efficiency"</span>,</span>
+<span id="cb78-8"><a href="#cb78-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Predicted vs Actual sleep efficiency"</span></span>
+<span id="cb78-9"><a href="#cb78-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Untitled_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
